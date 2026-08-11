@@ -1,0 +1,54 @@
+import io
+import re
+from datetime import date, datetime
+
+from pypdf import PdfReader
+
+from .base import RawExtraction
+
+CUIT_RE = re.compile(r"C\.?U\.?I\.?T\.?:?\s*(\d{2}-?\d{8}-?\d)")
+DOCUMENT_LETTER_RE = re.compile(r"FACTURA\s+([ABM])\b")
+DOCUMENT_CODE_RE = re.compile(r"C[oó]digo\s+(\d+)")
+NUMBER_RE = re.compile(r"N[°ºO]?\s*(\d{4,5}\s*-\s*\d{6,8})")
+DATE_RE = re.compile(r"(\d{2})[/\-\s](\d{2})[/\-\s](\d{4})")
+CAE_RE = re.compile(r"C\.?A\.?E\.?:?\s*(\d{14})")
+CAE_EXPIRATION_RE = re.compile(r"Vto\.?\s*C\.?A\.?E\.?:?\s*(\d{2}/\d{2}/\d{4})")
+TOTAL_RE = re.compile(r"\bTOTAL\b\s+([\d.,]+)")
+
+
+def _parse_ar_number(raw: str) -> float:
+    return float(raw.replace(".", "").replace(",", "."))
+
+
+def _parse_ar_date(raw: str) -> date:
+    normalized = raw.replace("-", "/").replace(" ", "/")
+    return datetime.strptime(normalized, "%d/%m/%Y").date()
+
+
+def extract_structured(pdf_bytes: bytes) -> RawExtraction:
+    reader = PdfReader(io.BytesIO(pdf_bytes))
+    text = "\n".join(page.extract_text() or "" for page in reader.pages)
+
+    cuit_match = CUIT_RE.search(text)
+    letter_match = DOCUMENT_LETTER_RE.search(text)
+    code_match = DOCUMENT_CODE_RE.search(text)
+    number_match = NUMBER_RE.search(text)
+    date_match = DATE_RE.search(text)
+    cae_match = CAE_RE.search(text)
+    cae_expiration_match = CAE_EXPIRATION_RE.search(text)
+    total_match = TOTAL_RE.search(text)
+
+    return RawExtraction(
+        cuit=cuit_match.group(1) if cuit_match else None,
+        document_type="FC",
+        document_letter=letter_match.group(1) if letter_match else None,
+        document_code=code_match.group(1) if code_match else None,
+        number=re.sub(r"\s+", "", number_match.group(1)) if number_match else None,
+        issue_date=_parse_ar_date(date_match.group(0)) if date_match else None,
+        total=_parse_ar_number(total_match.group(1)) if total_match else None,
+        cae=cae_match.group(1) if cae_match else None,
+        cae_expiration=(
+            _parse_ar_date(cae_expiration_match.group(1)) if cae_expiration_match else None
+        ),
+        raw_text=text,
+    )

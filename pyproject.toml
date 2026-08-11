@@ -1,0 +1,21 @@
+[project]
+name = "facturas-automatizacion"
+version = "0.1.0"
+description = "Extraccion y matching automatico de facturas de servicios contra Eiffel"
+requires-python = ">=3.10"
+dependencies = [
+    "pydantic>=2.6",
+    "pydantic-settings>=2.2",
+    "pypdf>=4.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+azure-ocr = ["azure-ai-documentintelligence>=1.0.0b1"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
