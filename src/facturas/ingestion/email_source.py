@@ -1,5 +1,6 @@
 import email
 import imaplib
+from email.message import Message
 from typing import Iterator
 
 from .base import RawDocument, Source
@@ -26,7 +27,7 @@ class EmailSource(Source):
                 message = email.message_from_bytes(msg_data[0][1])
                 yield from self._pdf_attachments(message)
 
-    def _pdf_attachments(self, message: email.message.Message) -> Iterator[RawDocument]:
+    def _pdf_attachments(self, message: Message) -> Iterator[RawDocument]:
         for part in message.walk():
             filename = part.get_filename()
             if not filename or not filename.lower().endswith(".pdf"):

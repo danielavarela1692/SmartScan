@@ -7,13 +7,16 @@ from pypdf import PdfReader
 from .base import RawExtraction
 
 CUIT_RE = re.compile(r"C\.?U\.?I\.?T\.?:?\s*(\d{2}-?\d{8}-?\d)")
-DOCUMENT_LETTER_RE = re.compile(r"FACTURA\s+([ABM])\b")
-DOCUMENT_CODE_RE = re.compile(r"C[oó]digo\s+(\d+)")
-NUMBER_RE = re.compile(r"N[°ºO]?\s*(\d{4,5}\s*-\s*\d{6,8})")
-DATE_RE = re.compile(r"(\d{2})[/\-\s](\d{2})[/\-\s](\d{4})")
+DOCUMENT_LETTER_RE = re.compile(r"FACTURA\s+([ABM])\b", re.IGNORECASE)
+DOCUMENT_CODE_RE = re.compile(r"(?:C[oó]digo|COD)\.?:?\s*(\d+)", re.IGNORECASE)
+NUMBER_RE = re.compile(r"N(?:ro|[°ºO])?\.?:?\s*(\d{4,5}\s*-\s*\d{6,8})", re.IGNORECASE)
+DATE_RE = re.compile(r"(\d{2})[/\-\s](\d{2})[/\-\s](\d{2}(?:\d{2})?)")
 CAE_RE = re.compile(r"C\.?A\.?E\.?:?\s*(\d{14})")
-CAE_EXPIRATION_RE = re.compile(r"Vto\.?\s*C\.?A\.?E\.?:?\s*(\d{2}/\d{2}/\d{4})")
+CAE_EXPIRATION_RE = re.compile(
+    r"(?:Vto\.?|FECHA\s+VENC)\.?\s*C\.?A\.?E\.?:?\s*(\d{2}/\d{2}/\d{2}(?:\d{2})?)", re.IGNORECASE
+)
 TOTAL_RE = re.compile(r"\bTOTAL\b\s+([\d.,]+)")
+TOTAL_CURRENCY_RE = re.compile(r"([\d.]+,\d{2})\s*\$")
 
 
 def _parse_ar_number(raw: str) -> float:
@@ -22,7 +25,10 @@ def _parse_ar_number(raw: str) -> float:
 
 def _parse_ar_date(raw: str) -> date:
     normalized = raw.replace("-", "/").replace(" ", "/")
-    return datetime.strptime(normalized, "%d/%m/%Y").date()
+    day, month, year = normalized.split("/")
+    if len(year) == 2:
+        year = "20" + year
+    return datetime.strptime(f"{day}/{month}/{year}", "%d/%m/%Y").date()
 
 
 def extract_structured(pdf_bytes: bytes) -> RawExtraction:
@@ -36,7 +42,7 @@ def extract_structured(pdf_bytes: bytes) -> RawExtraction:
     date_match = DATE_RE.search(text)
     cae_match = CAE_RE.search(text)
     cae_expiration_match = CAE_EXPIRATION_RE.search(text)
-    total_match = TOTAL_RE.search(text)
+    total_match = TOTAL_CURRENCY_RE.search(text) or TOTAL_RE.search(text)
 
     return RawExtraction(
         cuit=cuit_match.group(1) if cuit_match else None,
