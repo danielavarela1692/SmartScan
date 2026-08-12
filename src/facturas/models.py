@@ -1,4 +1,4 @@
-from datetime import date
+import datetime
 from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -50,7 +50,7 @@ class OtroCargoInput(Model):
 class ComprobanteFinalInput(Model):
     concept: str = Field(alias="concepto")
     number: str = Field(alias="numero")
-    expiration_date: date = Field(alias="vencimiento_fecha")
+    expiration_date: datetime.date = Field(alias="vencimiento_fecha")
 
 
 class RuleInput(Model):
@@ -61,7 +61,7 @@ class RuleInput(Model):
 
 class TraceInput(Model):
     user: str = Field(default="", alias="User")
-    date: date = Field(alias="Date")
+    date: datetime.date = Field(alias="Date")
     state: str = Field(alias="State")
     comment: Optional[str] = Field(default=None, alias="Comment")
 
@@ -75,8 +75,8 @@ class ServiceExpenseInput(Model):
     document_letter: str = Field(alias="comprobante_letra")
     document_code: str = Field(alias="comprobante_codigo")
     number: str = Field(alias="comprobante_numero")
-    date: date = Field(alias="comprobante_fecha")
-    accountable_date: date = Field(alias="comprobante_fecha_contable")
+    date: datetime.date = Field(alias="comprobante_fecha")
+    accountable_date: datetime.date = Field(alias="comprobante_fecha_contable")
 
     cuit: str = Field(alias="emisor_cuit")
     fantasy_name: Optional[str] = Field(default=None, alias="emisor_nombre_fantasia")
