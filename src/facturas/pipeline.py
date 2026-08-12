@@ -6,6 +6,8 @@ from pydantic import ValidationError
 from .classification import DocumentKind, classify
 from .extraction import RawExtraction, extract_structured, get_ocr_extractor
 from .ingestion import RawDocument, Source
+from .matching import MatchOutcome, ProviderItem, match_items
+from .matching.store import MatchStore
 from .models import ComprobanteFinalInput, ItemServiceExpenseInput, ServiceExpenseInput
 
 
@@ -79,6 +81,21 @@ def process_document(document: RawDocument) -> ExtractionResult:
     except ValidationError as exc:
         errors = [f"{'.'.join(str(loc) for loc in e['loc'])}: {e['msg']}" for e in exc.errors()]
         return ExtractionResult(document=document, raw=raw, errors=errors)
+
+
+def resolve_concepts(
+    result: ExtractionResult, catalog: list[ProviderItem], store: MatchStore
+) -> list[MatchOutcome]:
+    """Resuelve el `cuenta_contable` (item de compra) de cada linea y lo aplica
+    directamente sobre `result.service_expense.items`. Lo que no matchee queda
+    con `concept_id=None` en el outcome devuelto, para revision humana."""
+    if result.service_expense is None:
+        return []
+
+    outcomes = match_items(result.raw.items, result.service_expense.cuit, catalog, store)
+    for expense_item, outcome in zip(result.service_expense.items, outcomes):
+        expense_item.concept_id = outcome.concept_id
+    return outcomes
 
 
 def run(source: Source) -> list[ExtractionResult]:

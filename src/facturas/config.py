@@ -16,5 +16,12 @@ class Settings(BaseSettings):
 
     cuit_receptor: str = ""
 
+    eiffel_api_base_url: str = ""
+    eiffel_api_username: str = ""
+    eiffel_api_password: str = ""
+    eiffel_items_fixture: str = "fixtures/items_catalog.example.json"
+
+    match_store_path: str = "data/learned_matches.json"
+
 
 settings = Settings()

@@ -1,0 +1,26 @@
+[
+  {
+    "concept_id": "6001",
+    "description": "PAPEL HIG. D/H 30 MTS (4U) -ELEGANTE",
+    "cuit": "30717344894",
+    "provider_name": "CUATRO SIETE CUATRO S.R.L"
+  },
+  {
+    "concept_id": "6002",
+    "description": "ROLLO DE COCINA ELEGANTE 3 UNIDADES",
+    "cuit": "30717344894",
+    "provider_name": "CUATRO SIETE CUATRO S.R.L"
+  },
+  {
+    "concept_id": "6003",
+    "description": "TOALLAS DE PAPEL INTERCALADAS",
+    "cuit": "30717344894",
+    "provider_name": "CUATRO SIETE CUATRO S.R.L"
+  },
+  {
+    "concept_id": "9001",
+    "description": "SERVICIOS DE LIMPIEZA GENERAL",
+    "cuit": "30717344894",
+    "provider_name": "CUATRO SIETE CUATRO S.R.L"
+  }
+]

@@ -4,7 +4,7 @@ from datetime import date, datetime
 
 from pypdf import PdfReader
 
-from .base import RawExtraction
+from .base import RawExtraction, RawItem
 
 CUIT_RE = re.compile(r"C\.?U\.?I\.?T\.?:?\s*(\d{2}-?\d{8}-?\d)")
 DOCUMENT_LETTER_RE = re.compile(r"FACTURA\s+([ABM])\b", re.IGNORECASE)
@@ -18,6 +18,13 @@ CAE_EXPIRATION_RE = re.compile(
 TOTAL_RE = re.compile(r"\bTOTAL\b\s+([\d.,]+)")
 TOTAL_CURRENCY_RE = re.compile(r"([\d.]+,\d{2})\s*\$")
 
+# Best-effort: "<cantidad> <codigo> <descripcion>   <precio_unitario>  <total>" en una sola linea.
+# Como con el resto de los regex de este archivo, es especifico al formato de factura visto
+# hasta ahora y va a necesitar ajustes cuando aparezcan facturas de otros proveedores.
+ITEM_LINE_RE = re.compile(
+    r"^\s*(\d+)\s+(\S+)\s+(.+?)\s{2,}([\d.,]+)\s+([\d.,]+)\s*$"
+)
+
 
 def _parse_ar_number(raw: str) -> float:
     return float(raw.replace(".", "").replace(",", "."))
@@ -29,6 +36,24 @@ def _parse_ar_date(raw: str) -> date:
     if len(year) == 2:
         year = "20" + year
     return datetime.strptime(f"{day}/{month}/{year}", "%d/%m/%Y").date()
+
+
+def _extract_items(text: str) -> list[RawItem]:
+    items = []
+    for line in text.splitlines():
+        match = ITEM_LINE_RE.match(line)
+        if not match:
+            continue
+        quantity_raw, _code, detail, unit_price_raw, total_raw = match.groups()
+        items.append(
+            RawItem(
+                detail=detail.strip(),
+                quantity=_parse_ar_number(quantity_raw),
+                unit_price=_parse_ar_number(unit_price_raw),
+                total=_parse_ar_number(total_raw),
+            )
+        )
+    return items
 
 
 def extract_structured(pdf_bytes: bytes) -> RawExtraction:
@@ -56,5 +81,6 @@ def extract_structured(pdf_bytes: bytes) -> RawExtraction:
         cae_expiration=(
             _parse_ar_date(cae_expiration_match.group(1)) if cae_expiration_match else None
         ),
+        items=_extract_items(text),
         raw_text=text,
     )

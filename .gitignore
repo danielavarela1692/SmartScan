@@ -7,4 +7,6 @@ build/
 dist/
 .env
 inbox/
+outbox/
+data/
 .pytest_cache/
