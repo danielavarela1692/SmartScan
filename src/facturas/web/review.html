@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Panel de revisión — Fase 2</title>
+<style>
+  :root {
+    --bg: #F1F3F4;
+    --surface: #FFFFFF;
+    --surface-2: #F8F9FA;
+    --ink: #202124;
+    --ink-soft: #5F6368;
+    --accent: #1A73E8;
+    --accent-soft: #E8F0FE;
+    --good: #188038;
+    --good-soft: #E6F4EA;
+    --warn: #975A00;
+    --warn-soft: #FEF7E0;
+    --bad: #C5221F;
+    --bad-soft: #FCE8E6;
+    --line: #DADCE0;
+    --radius: 14px;
+    --radius-sm: 8px;
+    --shadow: 0 1px 2px rgba(60,64,67,.30), 0 1px 3px 1px rgba(60,64,67,.15);
+    --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #202124; --surface: #292A2D; --surface-2: #35363A;
+      --ink: #E8EAED; --ink-soft: #9AA0A6; --accent: #8AB4F8; --accent-soft: #2A3A56;
+      --good: #81C995; --good-soft: #1E3A26; --warn: #FDD663; --warn-soft: #3D3320;
+      --bad: #F28B82; --bad-soft: #3D1F1D; --line: #3C4043;
+      --shadow: 0 1px 2px rgba(0,0,0,.5), 0 1px 3px 1px rgba(0,0,0,.35);
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); }
+  header { background: var(--surface); box-shadow: var(--shadow); padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; }
+  header h1 { font-size: 17px; margin: 0; font-weight: 600; }
+  header button { background: var(--accent-soft); color: var(--accent); border: none; padding: 8px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; }
+
+  .layout { display: grid; grid-template-columns: 280px 1fr; gap: 20px; padding: 20px; align-items: start; }
+  .doc-list { display: flex; flex-direction: column; gap: 10px; }
+  .doc-card { background: var(--surface); border-radius: var(--radius-sm); box-shadow: var(--shadow); padding: 12px 14px; cursor: pointer; border: 2px solid transparent; }
+  .doc-card.active { border-color: var(--accent); }
+  .doc-card .fn { font-size: 13px; font-weight: 600; margin-bottom: 4px; word-break: break-word; }
+  .pill { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 9px; border-radius: 10px; }
+  .pill.ok { background: var(--good-soft); color: var(--good); }
+  .pill.pending { background: var(--warn-soft); color: var(--warn); }
+  .pill.err { background: var(--bad-soft); color: var(--bad); }
+  .empty, .placeholder { color: var(--ink-soft); font-size: 14px; padding: 40px; text-align: center; }
+
+  .panel { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .pdf-box { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; height: 80vh; }
+  .pdf-box iframe { width: 100%; height: 100%; border: none; }
+  .form-box { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); padding: 24px; }
+  .form-box h2 { font-size: 16px; margin: 0 0 16px; }
+  .field-row { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 13.5px; }
+  .field-row span:first-child { color: var(--ink-soft); }
+  .field-row span:last-child { font-weight: 600; text-align: right; }
+
+  .item-card { border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 12px 14px; margin-top: 12px; }
+  .item-card.resolved { border-color: var(--good); background: var(--good-soft); }
+  .item-card.pending { border-color: var(--warn); background: var(--warn-soft); }
+  .item-detail { font-size: 13.5px; font-weight: 600; margin-bottom: 6px; }
+  .item-meta { font-size: 12px; color: var(--ink-soft); margin-bottom: 8px; }
+  .item-card select { width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--line); font-size: 13px; font-family: var(--font); background: var(--surface); color: var(--ink); }
+  .item-resolved-desc { font-size: 13px; color: var(--good); }
+
+  .approve-btn { margin-top: 20px; width: 100%; padding: 12px; border: none; border-radius: 20px; background: var(--accent); color: white; font-size: 14px; font-weight: 600; cursor: pointer; }
+  .approve-btn:disabled { background: var(--line); color: var(--ink-soft); cursor: not-allowed; }
+
+  .error-banner { background: var(--bad-soft); color: var(--bad); border-radius: var(--radius-sm); padding: 16px; font-size: 13.5px; }
+</style>
+</head>
+<body>
+  <header>
+    <h1>📋 Panel de revisión — Fase 2</h1>
+    <button onclick="loadDocuments()">Actualizar</button>
+  </header>
+  <div class="layout">
+    <div class="doc-list" id="docList"></div>
+    <div id="mainPanel"><div class="placeholder">Elegí una factura de la izquierda</div></div>
+  </div>
+
+<script>
+let documents = [];
+let selectedFilename = null;
+
+async function loadDocuments() {
+  const res = await fetch('/api/documents');
+  documents = await res.json();
+  renderList();
+  if (selectedFilename && !documents.find(d => d.filename === selectedFilename)) {
+    selectedFilename = null;
+  }
+  if (!selectedFilename && documents.length > 0) {
+    selectedFilename = documents[0].filename;
+  }
+  renderMain();
+}
+
+function renderList() {
+  const el = document.getElementById('docList');
+  if (documents.length === 0) {
+    el.innerHTML = '<div class="empty">No hay facturas pendientes en ./inbox</div>';
+    return;
+  }
+  el.innerHTML = documents.map(doc => {
+    let pill;
+    if (doc.errors && doc.errors.length > 0) pill = '<span class="pill err">Error</span>';
+    else if (doc.all_resolved) pill = '<span class="pill ok">Todo resuelto</span>';
+    else {
+      const pending = doc.items.filter(i => !i.resolved).length;
+      pill = `<span class="pill pending">${pending} pendiente(s)</span>`;
+    }
+    const active = doc.filename === selectedFilename ? 'active' : '';
+    return `<div class="doc-card ${active}" onclick="selectDoc('${doc.filename.replace(/'/g, "\\'")}')">
+      <div class="fn">${doc.filename}</div>${pill}
+    </div>`;
+  }).join('');
+}
+
+function selectDoc(filename) {
+  selectedFilename = filename;
+  renderList();
+  renderMain();
+}
+
+function renderMain() {
+  const el = document.getElementById('mainPanel');
+  const doc = documents.find(d => d.filename === selectedFilename);
+  if (!doc) {
+    el.innerHTML = '<div class="placeholder">Elegí una factura de la izquierda</div>';
+    return;
+  }
+  if (doc.errors && doc.errors.length > 0) {
+    el.innerHTML = `<div class="error-banner"><strong>${doc.filename}</strong> no se pudo leer:<br>${doc.errors.join('; ')}</div>`;
+    return;
+  }
+
+  const itemsHtml = doc.items.map((item, idx) => {
+    if (item.resolved) {
+      const desc = item.concept_id;
+      return `<div class="item-card resolved">
+        <div class="item-detail">${item.detail}</div>
+        <div class="item-meta">cant. ${item.quantity} · $${item.total.toFixed(2)}</div>
+        <div class="item-resolved-desc">✓ Ítem de compra: ${item.concept_id}</div>
+      </div>`;
+    }
+    const options = item.candidates.map(c => `<option value="${c.concept_id}">${c.description}</option>`).join('');
+    return `<div class="item-card pending">
+      <div class="item-detail">${item.detail}</div>
+      <div class="item-meta">cant. ${item.quantity} · $${item.total.toFixed(2)} — sin coincidencia exacta</div>
+      <select onchange="resolveItem('${doc.cuit}', ${idx}, this.value)">
+        <option value="">Elegí un ítem de compra…</option>
+        ${options}
+      </select>
+    </div>`;
+  }).join('');
+
+  el.innerHTML = `<div class="panel">
+    <div class="pdf-box"><iframe src="/api/pdf/${encodeURIComponent(doc.filename)}"></iframe></div>
+    <div class="form-box">
+      <h2>${doc.filename}</h2>
+      <div class="field-row"><span>CUIT</span><span>${doc.cuit}</span></div>
+      <div class="field-row"><span>Proveedor</span><span>${doc.name}</span></div>
+      <div class="field-row"><span>Número</span><span>${doc.number}</span></div>
+      <div class="field-row"><span>Total</span><span>$${doc.total.toFixed(2)}</span></div>
+      ${itemsHtml}
+      <button class="approve-btn" id="approveBtn" ${doc.all_resolved ? '' : 'disabled'} onclick="approve('${doc.filename.replace(/'/g, "\\'")}')">
+        ${doc.all_resolved ? 'Aprobar y guardar' : 'Resolvé todas las líneas para aprobar'}
+      </button>
+    </div>
+  </div>`;
+}
+
+async function resolveItem(cuit, idx, conceptId) {
+  if (!conceptId) return;
+  const doc = documents.find(d => d.filename === selectedFilename);
+  const item = doc.items[idx];
+  await fetch('/api/resolve', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ cuit, detail: item.detail, concept_id: conceptId }),
+  });
+  await loadDocuments();
+}
+
+async function approve(filename) {
+  const res = await fetch(`/api/approve/${encodeURIComponent(filename)}`, { method: 'POST' });
+  if (!res.ok) {
+    const err = await res.json();
+    alert('No se pudo aprobar: ' + (err.detail || res.statusText));
+    return;
+  }
+  await loadDocuments();
+}
+
+loadDocuments();
+</script>
+</body>
+</html>

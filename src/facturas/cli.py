@@ -87,6 +87,15 @@ def cmd_match(args: argparse.Namespace) -> None:
             print(f"    Listo para la fase 3, guardado en {out_path}")
 
 
+def cmd_serve(args: argparse.Namespace) -> None:
+    import uvicorn
+
+    from .web import create_app
+
+    app = create_app(inbox_dir=Path(args.path), outbox_dir=Path(args.outbox))
+    uvicorn.run(app, host="127.0.0.1", port=args.port)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -100,12 +109,19 @@ def main() -> None:
     match_parser.add_argument("--path", default="./inbox")
     match_parser.add_argument("--outbox", default="./outbox")
 
+    serve_parser = subparsers.add_parser("serve", help="Levanta el panel de revision (fase 2) en el navegador")
+    serve_parser.add_argument("--path", default="./inbox")
+    serve_parser.add_argument("--outbox", default="./outbox")
+    serve_parser.add_argument("--port", type=int, default=8000)
+
     args = parser.parse_args()
 
     if args.command == "run":
         cmd_run(args)
     elif args.command == "match":
         cmd_match(args)
+    elif args.command == "serve":
+        cmd_serve(args)
 
 
 if __name__ == "__main__":

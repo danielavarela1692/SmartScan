@@ -18,6 +18,11 @@ CAE_EXPIRATION_RE = re.compile(
 TOTAL_RE = re.compile(r"\bTOTAL\b\s+([\d.,]+)")
 TOTAL_CURRENCY_RE = re.compile(r"([\d.]+,\d{2})\s*\$")
 
+# Best-effort: la razon social del emisor suele venir en la linea siguiente al
+# codigo de comprobante (COD:xx). Igual que el resto de estos regex, especifico
+# al formato visto hasta ahora.
+NAME_RE = re.compile(r"COD:?\s*\d+\s*\n(.+)", re.IGNORECASE)
+
 # Best-effort: "<cantidad> <codigo> <descripcion>   <precio_unitario>  <total>" en una sola linea.
 # Como con el resto de los regex de este archivo, es especifico al formato de factura visto
 # hasta ahora y va a necesitar ajustes cuando aparezcan facturas de otros proveedores.
@@ -68,9 +73,11 @@ def extract_structured(pdf_bytes: bytes) -> RawExtraction:
     cae_match = CAE_RE.search(text)
     cae_expiration_match = CAE_EXPIRATION_RE.search(text)
     total_match = TOTAL_CURRENCY_RE.search(text) or TOTAL_RE.search(text)
+    name_match = NAME_RE.search(text)
 
     return RawExtraction(
         cuit=cuit_match.group(1) if cuit_match else None,
+        name=name_match.group(1).strip() if name_match else None,
         document_type="FC",
         document_letter=letter_match.group(1) if letter_match else None,
         document_code=code_match.group(1) if code_match else None,
