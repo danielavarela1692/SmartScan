@@ -19,12 +19,20 @@ CAE_EXPIRATION_RE = re.compile(
     r"(?:Vto\.?|FECHA\s+VENC)\.?\s*C\.?A\.?E\.?:?\s*(\d{2}/\d{2}/\d{2}(?:\d{2})?)", re.IGNORECASE
 )
 TOTAL_RE = re.compile(r"\bTOTAL\b\s+([\d.,]+)")
-TOTAL_CURRENCY_RE = re.compile(r"([\d.]+,\d{2})\s*\$")
+# El total real suele ser el ultimo numero seguido de "$" en el bloque de
+# totales (a veces hay varios "$" en esa linea: subtotal, IVA, total...). Se
+# usa la ULTIMA coincidencia, no la primera - ver donde se llama mas abajo.
+TOTAL_CURRENCY_RE = re.compile(r"([\d.,]+)\s*\$")
+
+# Mapeo de codigo de comprobante AFIP -> letra, para cuando la letra no
+# aparece como texto (en muchas facturas reales es un grafico/imagen, no texto).
+CODE_TO_LETTER = {"01": "A", "06": "B", "11": "C", "51": "M"}
 
 # Best-effort: la razon social del emisor suele venir en la linea siguiente al
-# codigo de comprobante (COD:xx). Igual que el resto de estos regex, especifico
+# codigo de comprobante (COD:xx), aunque haya mas texto (ej. la fecha) en esa
+# misma linea antes del salto. Igual que el resto de estos regex, especifico
 # al formato visto hasta ahora.
-NAME_RE = re.compile(r"COD:?\s*\d+\s*\n(.+)", re.IGNORECASE)
+NAME_RE = re.compile(r"COD:?\s*\d+.*\n(.+)", re.IGNORECASE)
 
 # Best-effort: "<cantidad> <codigo> <descripcion>   <precio_unitario>  <total>" en una sola linea.
 # Como con el resto de los regex de este archivo, es especifico al formato de factura visto
@@ -35,7 +43,26 @@ ITEM_LINE_RE = re.compile(
 
 
 def _parse_ar_number(raw: str) -> float:
-    return float(raw.replace(".", "").replace(",", "."))
+    """No todas las facturas usan el mismo formato: unas escriben los
+    decimales con coma (22858,30) y otras con punto (493407.68). Se detecta
+    cual es el separador decimal en vez de asumir siempre el formato argentino."""
+    raw = raw.strip()
+    has_comma = "," in raw
+    has_dot = "." in raw
+
+    if has_comma and has_dot:
+        if raw.rfind(",") > raw.rfind("."):
+            raw = raw.replace(".", "").replace(",", ".")
+        else:
+            raw = raw.replace(",", "")
+    elif has_comma:
+        raw = raw.replace(",", ".")
+    elif has_dot:
+        frac = raw.rpartition(".")[2]
+        if len(frac) != 2:
+            raw = raw.replace(".", "")
+
+    return float(raw)
 
 
 def _parse_ar_date(raw: str) -> date:
@@ -75,15 +102,20 @@ def extract_structured(pdf_bytes: bytes) -> RawExtraction:
     date_match = DATE_RE.search(text)
     cae_match = CAE_RE.search(text)
     cae_expiration_match = CAE_EXPIRATION_RE.search(text)
-    total_match = TOTAL_CURRENCY_RE.search(text) or TOTAL_RE.search(text)
     name_match = NAME_RE.search(text)
+
+    currency_matches = list(TOTAL_CURRENCY_RE.finditer(text))
+    total_match = currency_matches[-1] if currency_matches else TOTAL_RE.search(text)
+
+    document_code = code_match.group(1).zfill(2) if code_match else None
+    document_letter = letter_match.group(1) if letter_match else CODE_TO_LETTER.get(document_code)
 
     return RawExtraction(
         cuit=cuit_match.group(1) if cuit_match else None,
         name=name_match.group(1).strip() if name_match else None,
         document_type="FC",
-        document_letter=letter_match.group(1) if letter_match else None,
-        document_code=code_match.group(1) if code_match else None,
+        document_letter=document_letter,
+        document_code=document_code,
         number=re.sub(r"\s+", "", number_match.group(1)) if number_match else None,
         issue_date=_parse_ar_date(date_match.group(0)) if date_match else None,
         total=_parse_ar_number(total_match.group(1)) if total_match else None,
