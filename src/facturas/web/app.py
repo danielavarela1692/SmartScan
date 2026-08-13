@@ -1,4 +1,5 @@
 import json
+from difflib import SequenceMatcher
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
@@ -7,8 +8,25 @@ from pydantic import BaseModel
 
 from ..config import settings
 from ..ingestion.base import RawDocument
-from ..matching import MatchStore, get_items_catalog_client
+from ..matching import MatchStore, ProviderItem, get_items_catalog_client
+from ..matching.store import normalize_text
 from ..pipeline import process_document, resolve_concepts
+
+
+def _ranked_candidates(detail: str, candidates: list[ProviderItem]) -> list[dict]:
+    """Ordena las opciones de mayor a menor parecido de texto, para sugerir
+    primero la mas probable. Esto es solo para ayudar a elegir mas rapido en
+    la revision humana - el auto-match sigue siendo por coincidencia exacta."""
+    detail_norm = normalize_text(detail)
+    scored = [
+        (
+            round(SequenceMatcher(None, detail_norm, normalize_text(c.description)).ratio() * 100),
+            c,
+        )
+        for c in candidates
+    ]
+    scored.sort(key=lambda pair: pair[0], reverse=True)
+    return [{"concept_id": c.concept_id, "description": c.description, "score": score} for score, c in scored]
 
 TEMPLATE_PATH = Path(__file__).parent / "review.html"
 
@@ -52,9 +70,7 @@ def create_app(inbox_dir: Path, outbox_dir: Path) -> FastAPI:
                     "concept_id": outcome.concept_id,
                     "resolved": outcome.resolved,
                     "candidates": (
-                        []
-                        if outcome.resolved
-                        else [{"concept_id": c.concept_id, "description": c.description} for c in outcome.candidates]
+                        [] if outcome.resolved else _ranked_candidates(outcome.item.detail, outcome.candidates)
                     ),
                 }
                 for outcome in outcomes

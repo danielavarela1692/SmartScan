@@ -40,7 +40,7 @@
   header h1 { font-size: 17px; margin: 0; font-weight: 600; }
   header button { background: var(--accent-soft); color: var(--accent); border: none; padding: 8px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; }
 
-  .layout { display: grid; grid-template-columns: 280px 1fr; gap: 20px; padding: 20px; align-items: start; }
+  .layout { display: grid; grid-template-columns: 260px 1fr; gap: 20px; padding: 20px; align-items: start; }
   .doc-list { display: flex; flex-direction: column; gap: 10px; }
   .doc-card { background: var(--surface); border-radius: var(--radius-sm); box-shadow: var(--shadow); padding: 12px 14px; cursor: pointer; border: 2px solid transparent; }
   .doc-card.active { border-color: var(--accent); }
@@ -51,26 +51,44 @@
   .pill.err { background: var(--bad-soft); color: var(--bad); }
   .empty, .placeholder { color: var(--ink-soft); font-size: 14px; padding: 40px; text-align: center; }
 
-  .panel { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-  .pdf-box { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; height: 80vh; }
-  .pdf-box iframe { width: 100%; height: 100%; border: none; }
-  .form-box { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); padding: 24px; }
-  .form-box h2 { font-size: 16px; margin: 0 0 16px; }
-  .field-row { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 13.5px; }
+  .panel { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; }
+  .pdf-col { display: flex; flex-direction: column; gap: 8px; }
+  .pdf-open-link { align-self: flex-start; font-size: 12.5px; color: var(--accent); text-decoration: none; font-weight: 600; }
+  .pdf-open-link:hover { text-decoration: underline; }
+  .pdf-box { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; height: 76vh; }
+  .pdf-box embed { width: 100%; height: 100%; border: none; }
+
+  .wizard { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); padding: 24px; min-height: 76vh; display: flex; flex-direction: column; }
+  .steps { display: flex; gap: 6px; margin-bottom: 18px; }
+  .steps .dot { flex: 1; height: 4px; border-radius: 2px; background: var(--line); }
+  .steps .dot.done { background: var(--good); }
+  .steps .dot.current { background: var(--accent); }
+  .step-label { font-size: 11.5px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--accent); margin-bottom: 6px; }
+  .wizard h2 { font-size: 18px; margin: 0 0 4px; }
+  .wizard .sub { font-size: 13.5px; color: var(--ink-soft); margin-bottom: 20px; }
+
+  .field-row { display: flex; justify-content: space-between; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
   .field-row span:first-child { color: var(--ink-soft); }
   .field-row span:last-child { font-weight: 600; text-align: right; }
 
-  .item-card { border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 12px 14px; margin-top: 12px; }
-  .item-card.resolved { border-color: var(--good); background: var(--good-soft); }
-  .item-card.pending { border-color: var(--warn); background: var(--warn-soft); }
-  .item-detail { font-size: 13.5px; font-weight: 600; margin-bottom: 6px; }
-  .item-meta { font-size: 12px; color: var(--ink-soft); margin-bottom: 8px; }
-  .item-card select { width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--line); font-size: 13px; font-family: var(--font); background: var(--surface); color: var(--ink); }
-  .item-resolved-desc { font-size: 13px; color: var(--good); }
+  .line-summary { background: var(--surface-2); border-radius: var(--radius-sm); padding: 14px 16px; margin-bottom: 18px; }
+  .line-summary .detail { font-weight: 600; font-size: 14.5px; margin-bottom: 4px; }
+  .line-summary .meta { font-size: 12.5px; color: var(--ink-soft); }
 
-  .approve-btn { margin-top: 20px; width: 100%; padding: 12px; border: none; border-radius: 20px; background: var(--accent); color: white; font-size: 14px; font-weight: 600; cursor: pointer; }
-  .approve-btn:disabled { background: var(--line); color: var(--ink-soft); cursor: not-allowed; }
+  .candidate-list { display: flex; flex-direction: column; gap: 8px; overflow-y: auto; flex: 1; }
+  .candidate { display: flex; align-items: center; justify-content: space-between; gap: 10px; border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 12px 14px; cursor: pointer; text-align: left; background: var(--surface); font-family: var(--font); font-size: 13.5px; color: var(--ink); }
+  .candidate:hover { border-color: var(--accent); background: var(--accent-soft); }
+  .candidate.top { border-color: var(--accent); }
+  .candidate .badge { font-size: 10.5px; font-weight: 700; color: var(--accent); background: var(--accent-soft); padding: 2px 8px; border-radius: 10px; white-space: nowrap; }
 
+  .primary-btn { margin-top: 20px; width: 100%; padding: 13px; border: none; border-radius: 20px; background: var(--accent); color: white; font-size: 14.5px; font-weight: 600; cursor: pointer; }
+  .primary-btn:disabled { background: var(--line); color: var(--ink-soft); cursor: not-allowed; }
+  .ghost-btn { margin-top: 10px; width: 100%; padding: 10px; border: 1px solid var(--line); border-radius: 20px; background: transparent; color: var(--ink-soft); font-size: 13px; font-weight: 600; cursor: pointer; }
+
+  .resolved-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 8px; }
+  .resolved-row { display: flex; justify-content: space-between; font-size: 13px; background: var(--good-soft); color: var(--good); padding: 8px 12px; border-radius: 8px; }
+
+  .success-icon { font-size: 40px; text-align: center; margin-bottom: 8px; }
   .error-banner { background: var(--bad-soft); color: var(--bad); border-radius: var(--radius-sm); padding: 16px; font-size: 13.5px; }
 </style>
 </head>
@@ -87,6 +105,8 @@
 <script>
 let documents = [];
 let selectedFilename = null;
+let step = 'header'; // 'header' | 'item' | 'final'
+let currentItemIndex = null;
 
 async function loadDocuments() {
   const res = await fetch('/api/documents');
@@ -96,7 +116,8 @@ async function loadDocuments() {
     selectedFilename = null;
   }
   if (!selectedFilename && documents.length > 0) {
-    selectedFilename = documents[0].filename;
+    selectDoc(documents[0].filename);
+    return;
   }
   renderMain();
 }
@@ -124,7 +145,22 @@ function renderList() {
 
 function selectDoc(filename) {
   selectedFilename = filename;
+  step = 'header';
+  currentItemIndex = null;
   renderList();
+  renderMain();
+}
+
+function advance() {
+  const doc = documents.find(d => d.filename === selectedFilename);
+  const idx = doc.items.findIndex(i => !i.resolved);
+  if (idx === -1) {
+    step = 'final';
+    currentItemIndex = null;
+  } else {
+    step = 'item';
+    currentItemIndex = idx;
+  }
   renderMain();
 }
 
@@ -140,44 +176,70 @@ function renderMain() {
     return;
   }
 
-  const itemsHtml = doc.items.map((item, idx) => {
-    if (item.resolved) {
-      const desc = item.concept_id;
-      return `<div class="item-card resolved">
-        <div class="item-detail">${item.detail}</div>
-        <div class="item-meta">cant. ${item.quantity} · $${item.total.toFixed(2)}</div>
-        <div class="item-resolved-desc">✓ Ítem de compra: ${item.concept_id}</div>
-      </div>`;
-    }
-    const options = item.candidates.map(c => `<option value="${c.concept_id}">${c.description}</option>`).join('');
-    return `<div class="item-card pending">
-      <div class="item-detail">${item.detail}</div>
-      <div class="item-meta">cant. ${item.quantity} · $${item.total.toFixed(2)} — sin coincidencia exacta</div>
-      <select onchange="resolveItem('${doc.cuit}', ${idx}, this.value)">
-        <option value="">Elegí un ítem de compra…</option>
-        ${options}
-      </select>
-    </div>`;
+  const pendingCount = doc.items.filter(i => !i.resolved).length;
+  const totalSteps = 2 + doc.items.length; // datos generales + N items + aprobar
+  let stepNumber = 1;
+  if (step === 'item') stepNumber = 2 + currentItemIndex;
+  if (step === 'final') stepNumber = totalSteps;
+
+  const dots = Array.from({ length: totalSteps }, (_, i) => {
+    const n = i + 1;
+    let cls = 'dot';
+    if (n < stepNumber) cls += ' done';
+    else if (n === stepNumber) cls += ' current';
+    return `<div class="${cls}"></div>`;
   }).join('');
 
-  el.innerHTML = `<div class="panel">
-    <div class="pdf-box"><iframe src="/api/pdf/${encodeURIComponent(doc.filename)}"></iframe></div>
-    <div class="form-box">
+  const pdfUrl = `/api/pdf/${encodeURIComponent(doc.filename)}`;
+  const pdfHtml = `<div class="pdf-col">
+    <a class="pdf-open-link" href="${pdfUrl}" target="_blank">↗ Si no ves la factura acá abajo, abrila en una pestaña nueva</a>
+    <div class="pdf-box"><embed src="${pdfUrl}" type="application/pdf" /></div>
+  </div>`;
+
+  let wizardHtml;
+  if (step === 'header') {
+    wizardHtml = `<div class="step-label">Paso ${stepNumber} de ${totalSteps} — Datos generales</div>
       <h2>${doc.filename}</h2>
+      <div class="sub">Fijate que estos datos coincidan con lo que dice la factura de al lado.</div>
       <div class="field-row"><span>CUIT</span><span>${doc.cuit}</span></div>
-      <div class="field-row"><span>Proveedor</span><span>${doc.name}</span></div>
+      <div class="field-row"><span>Proveedor</span><span>${doc.name || '—'}</span></div>
       <div class="field-row"><span>Número</span><span>${doc.number}</span></div>
       <div class="field-row"><span>Total</span><span>$${doc.total.toFixed(2)}</span></div>
-      ${itemsHtml}
-      <button class="approve-btn" id="approveBtn" ${doc.all_resolved ? '' : 'disabled'} onclick="approve('${doc.filename.replace(/'/g, "\\'")}')">
-        ${doc.all_resolved ? 'Aprobar y guardar' : 'Resolvé todas las líneas para aprobar'}
-      </button>
-    </div>
-  </div>`;
+      <div style="flex:1"></div>
+      <button class="primary-btn" onclick="advance()">Coincide, continuar →</button>`;
+  } else if (step === 'item') {
+    const item = doc.items[currentItemIndex];
+    const candidatesHtml = item.candidates.map((c, i) => {
+      const top = i === 0 ? 'top' : '';
+      const badge = i === 0 ? '<span class="badge">Sugerido</span>' : `<span class="badge" style="background:transparent;color:var(--ink-soft)">${c.score}%</span>`;
+      return `<button class="candidate ${top}" onclick="chooseItem('${doc.cuit}', ${currentItemIndex}, '${c.concept_id}')">
+        <span>${c.description}</span>${badge}
+      </button>`;
+    }).join('');
+    wizardHtml = `<div class="step-label">Paso ${stepNumber} de ${totalSteps} — Elegí el ítem de compra</div>
+      <h2>Línea sin coincidencia exacta</h2>
+      <div class="sub">Todavía quedan ${pendingCount} línea(s) por resolver. Elegí a qué ítem corresponde ésta:</div>
+      <div class="line-summary">
+        <div class="detail">${item.detail}</div>
+        <div class="meta">cantidad ${item.quantity} · $${item.total.toFixed(2)}</div>
+      </div>
+      <div class="candidate-list">${candidatesHtml}</div>`;
+  } else {
+    const rows = doc.items.map(i => `<div class="resolved-row"><span>${i.detail}</span><span>✓ ${i.concept_id}</span></div>`).join('');
+    wizardHtml = `<div class="step-label">Paso ${stepNumber} de ${totalSteps} — Listo</div>
+      <div class="success-icon">✅</div>
+      <h2 style="text-align:center;">Todas las líneas quedaron resueltas</h2>
+      <div class="sub" style="text-align:center;">Revisá el resumen y aprobá para dejarla lista para la fase 3.</div>
+      <div class="resolved-list">${rows}</div>
+      <div style="flex:1"></div>
+      <button class="primary-btn" onclick="approve('${doc.filename.replace(/'/g, "\\'")}')">Aprobar y guardar</button>
+      <button class="ghost-btn" onclick="step='header'; renderMain();">← Volver a revisar los datos</button>`;
+  }
+
+  el.innerHTML = `<div class="steps">${dots}</div><div class="panel">${pdfHtml}<div class="wizard">${wizardHtml}</div></div>`;
 }
 
-async function resolveItem(cuit, idx, conceptId) {
-  if (!conceptId) return;
+async function chooseItem(cuit, idx, conceptId) {
   const doc = documents.find(d => d.filename === selectedFilename);
   const item = doc.items[idx];
   await fetch('/api/resolve', {
@@ -185,7 +247,10 @@ async function resolveItem(cuit, idx, conceptId) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ cuit, detail: item.detail, concept_id: conceptId }),
   });
-  await loadDocuments();
+  const res = await fetch('/api/documents');
+  documents = await res.json();
+  renderList();
+  advance();
 }
 
 async function approve(filename) {
