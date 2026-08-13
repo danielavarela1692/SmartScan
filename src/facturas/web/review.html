@@ -99,12 +99,23 @@
   </header>
   <div class="layout">
     <div class="doc-list" id="docList"></div>
-    <div id="mainPanel"><div class="placeholder">Elegí una factura de la izquierda</div></div>
+    <div>
+      <div class="placeholder" id="placeholder">Elegí una factura de la izquierda</div>
+      <div class="error-banner" id="errorBanner" style="display:none"></div>
+      <div class="panel" id="panel" style="display:none">
+        <div class="pdf-col">
+          <a class="pdf-open-link" id="pdfLink" href="#" target="_blank">↗ Si no ves la factura acá abajo, abrila en una pestaña nueva</a>
+          <div class="pdf-box"><embed id="pdfEmbed" type="application/pdf" /></div>
+        </div>
+        <div class="wizard" id="wizard"></div>
+      </div>
+    </div>
   </div>
 
 <script>
 let documents = [];
 let selectedFilename = null;
+let loadedPdfFor = null;
 let step = 'header'; // 'header' | 'item' | 'final'
 let currentItemIndex = null;
 
@@ -165,15 +176,38 @@ function advance() {
 }
 
 function renderMain() {
-  const el = document.getElementById('mainPanel');
+  const placeholder = document.getElementById('placeholder');
+  const errorBanner = document.getElementById('errorBanner');
+  const panel = document.getElementById('panel');
   const doc = documents.find(d => d.filename === selectedFilename);
+
   if (!doc) {
-    el.innerHTML = '<div class="placeholder">Elegí una factura de la izquierda</div>';
+    placeholder.style.display = '';
+    errorBanner.style.display = 'none';
+    panel.style.display = 'none';
+    loadedPdfFor = null;
     return;
   }
   if (doc.errors && doc.errors.length > 0) {
-    el.innerHTML = `<div class="error-banner"><strong>${doc.filename}</strong> no se pudo leer:<br>${doc.errors.join('; ')}</div>`;
+    placeholder.style.display = 'none';
+    panel.style.display = 'none';
+    errorBanner.style.display = '';
+    errorBanner.innerHTML = `<strong>${doc.filename}</strong> no se pudo leer:<br>${doc.errors.join('; ')}`;
+    loadedPdfFor = null;
     return;
+  }
+  placeholder.style.display = 'none';
+  errorBanner.style.display = 'none';
+  panel.style.display = '';
+
+  // El <embed> del PDF nunca se recrea: solo cambia el src cuando cambia el
+  // documento seleccionado. Recrearlo en cada paso (via innerHTML) es lo que
+  // hacia que el visor de PDF del navegador quedara en blanco/negro.
+  if (loadedPdfFor !== doc.filename) {
+    const pdfUrl = `/api/pdf/${encodeURIComponent(doc.filename)}`;
+    document.getElementById('pdfLink').href = pdfUrl;
+    document.getElementById('pdfEmbed').src = pdfUrl;
+    loadedPdfFor = doc.filename;
   }
 
   const pendingCount = doc.items.filter(i => !i.resolved).length;
@@ -189,12 +223,6 @@ function renderMain() {
     else if (n === stepNumber) cls += ' current';
     return `<div class="${cls}"></div>`;
   }).join('');
-
-  const pdfUrl = `/api/pdf/${encodeURIComponent(doc.filename)}`;
-  const pdfHtml = `<div class="pdf-col">
-    <a class="pdf-open-link" href="${pdfUrl}" target="_blank">↗ Si no ves la factura acá abajo, abrila en una pestaña nueva</a>
-    <div class="pdf-box"><embed src="${pdfUrl}" type="application/pdf" /></div>
-  </div>`;
 
   let wizardHtml;
   if (step === 'header') {
@@ -236,7 +264,7 @@ function renderMain() {
       <button class="ghost-btn" onclick="step='header'; renderMain();">← Volver a revisar los datos</button>`;
   }
 
-  el.innerHTML = `<div class="steps">${dots}</div><div class="panel">${pdfHtml}<div class="wizard">${wizardHtml}</div></div>`;
+  document.getElementById('wizard').innerHTML = `<div class="steps">${dots}</div>${wizardHtml}`;
 }
 
 async function chooseItem(cuit, idx, conceptId) {
