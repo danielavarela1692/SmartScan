@@ -7,6 +7,9 @@ from pypdf import PdfReader
 from .base import RawExtraction, RawItem
 
 CUIT_RE = re.compile(r"C\.?U\.?I\.?T\.?:?\s*(\d{2}-?\d{8}-?\d)")
+# Respaldo: algunos comprobantes (ej. resumenes bancarios) muestran el CUIT
+# solo, sin la palabra "CUIT" adelante. Se usa solo si CUIT_RE no encontro nada.
+CUIT_BARE_RE = re.compile(r"\b(\d{2}-\d{8}-\d)\b")
 DOCUMENT_LETTER_RE = re.compile(r"FACTURA\s+([ABM])\b", re.IGNORECASE)
 DOCUMENT_CODE_RE = re.compile(r"(?:C[oó]digo|COD)\.?:?\s*(\d+)", re.IGNORECASE)
 NUMBER_RE = re.compile(r"N(?:ro|[°ºO])?\.?:?\s*(\d{4,5}\s*-\s*\d{6,8})", re.IGNORECASE)
@@ -65,7 +68,7 @@ def extract_structured(pdf_bytes: bytes) -> RawExtraction:
     reader = PdfReader(io.BytesIO(pdf_bytes))
     text = "\n".join(page.extract_text() or "" for page in reader.pages)
 
-    cuit_match = CUIT_RE.search(text)
+    cuit_match = CUIT_RE.search(text) or CUIT_BARE_RE.search(text)
     letter_match = DOCUMENT_LETTER_RE.search(text)
     code_match = DOCUMENT_CODE_RE.search(text)
     number_match = NUMBER_RE.search(text)
