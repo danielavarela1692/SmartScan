@@ -1,16 +1,19 @@
 import json
 from difflib import SequenceMatcher
 from pathlib import Path
+from typing import Optional
 
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse, HTMLResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 from ..config import settings
 from ..ingestion.base import RawDocument
 from ..matching import MatchStore, ProviderItem, get_items_catalog_client
 from ..matching.store import normalize_text
-from ..pipeline import process_document, resolve_concepts
+from ..pipeline import ExtractionResult, extract_raw, resolve_concepts, to_service_expense
+
+TEMPLATE_PATH = Path(__file__).parent / "review.html"
 
 
 def _ranked_candidates(detail: str, candidates: list[ProviderItem]) -> list[dict]:
@@ -28,7 +31,30 @@ def _ranked_candidates(detail: str, candidates: list[ProviderItem]) -> list[dict
     scored.sort(key=lambda pair: pair[0], reverse=True)
     return [{"concept_id": c.concept_id, "description": c.description, "score": score} for score, c in scored]
 
-TEMPLATE_PATH = Path(__file__).parent / "review.html"
+
+class HeaderOverrideStore:
+    """Correcciones manuales a los datos de encabezado (CUIT, proveedor,
+    numero, total) cuando la extraccion automatica se equivoca o no
+    encuentra algo. Mismo patron que MatchStore, pero por documento."""
+
+    def __init__(self, path: Path):
+        self.path = path
+        self._data: dict[str, dict] = self._load()
+
+    def _load(self) -> dict[str, dict]:
+        if not self.path.exists():
+            return {}
+        return json.loads(self.path.read_text(encoding="utf-8"))
+
+    def get(self, filename: str) -> dict:
+        return self._data.get(filename, {})
+
+    def set(self, filename: str, fields: dict) -> None:
+        current = self._data.get(filename, {})
+        current.update(fields)
+        self._data[filename] = current
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        self.path.write_text(json.dumps(self._data, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
 def create_app(inbox_dir: Path, outbox_dir: Path) -> FastAPI:
@@ -36,13 +62,37 @@ def create_app(inbox_dir: Path, outbox_dir: Path) -> FastAPI:
     outbox_dir.mkdir(parents=True, exist_ok=True)
     catalog = get_items_catalog_client(settings).get_items()
     store = MatchStore(Path(settings.match_store_path))
+    header_store = HeaderOverrideStore(Path(settings.header_overrides_path))
 
     def _load_document(pdf_path: Path):
         content = pdf_path.read_bytes()
         document = RawDocument(filename=pdf_path.name, content=content, origin=f"manual:{pdf_path}")
-        result = process_document(document)
+        raw = extract_raw(document)
+
+        overrides = header_store.get(pdf_path.name)
+        if overrides.get("cuit"):
+            raw.cuit = overrides["cuit"]
+        if overrides.get("name"):
+            raw.name = overrides["name"]
+        if overrides.get("number"):
+            raw.number = overrides["number"]
+        if overrides.get("total") is not None:
+            raw.total = overrides["total"]
+
+        needs_header = not raw.cuit or not raw.number
+        if needs_header:
+            result = ExtractionResult(document=document, raw=raw, errors=[])
+            return result, [], True
+
+        try:
+            service_expense = to_service_expense(raw)
+        except ValidationError as exc:
+            errors = [f"{'.'.join(str(loc) for loc in e['loc'])}: {e['msg']}" for e in exc.errors()]
+            return ExtractionResult(document=document, raw=raw, errors=errors), [], False
+
+        result = ExtractionResult(document=document, raw=raw, service_expense=service_expense)
         outcomes = resolve_concepts(result, catalog, store)
-        return result, outcomes
+        return result, outcomes, False
 
     @app.get("/", response_class=HTMLResponse)
     def index():
@@ -55,36 +105,41 @@ def create_app(inbox_dir: Path, outbox_dir: Path) -> FastAPI:
             if (outbox_dir / f"{pdf_path.name}.json").exists():
                 continue  # ya aprobada en una corrida anterior
 
-            result, outcomes = _load_document(pdf_path)
-            if result.errors:
-                documents.append({"filename": pdf_path.name, "errors": result.errors})
+            result, outcomes, needs_header = _load_document(pdf_path)
+            raw = result.raw
+
+            if result.errors and not needs_header:
+                documents.append({"filename": pdf_path.name, "errors": result.errors, "needs_header": False})
                 continue
 
-            expense = result.service_expense
-            items = [
-                {
-                    "detail": outcome.item.detail,
-                    "quantity": outcome.item.quantity,
-                    "unit_price": outcome.item.unit_price,
-                    "total": outcome.item.total,
-                    "concept_id": outcome.concept_id,
-                    "resolved": outcome.resolved,
-                    "candidates": (
-                        [] if outcome.resolved else _ranked_candidates(outcome.item.detail, outcome.candidates)
-                    ),
-                }
-                for outcome in outcomes
-            ]
+            items = []
+            if not needs_header:
+                items = [
+                    {
+                        "detail": outcome.item.detail,
+                        "quantity": outcome.item.quantity,
+                        "unit_price": outcome.item.unit_price,
+                        "total": outcome.item.total,
+                        "concept_id": outcome.concept_id,
+                        "resolved": outcome.resolved,
+                        "candidates": (
+                            [] if outcome.resolved else _ranked_candidates(outcome.item.detail, outcome.candidates)
+                        ),
+                    }
+                    for outcome in outcomes
+                ]
+
             documents.append(
                 {
                     "filename": pdf_path.name,
                     "errors": [],
-                    "cuit": expense.cuit,
-                    "name": expense.name,
-                    "number": expense.number,
-                    "total": expense.total,
+                    "needs_header": needs_header,
+                    "cuit": raw.cuit or "",
+                    "name": raw.name or "",
+                    "number": raw.number or "",
+                    "total": raw.total,
                     "items": items,
-                    "all_resolved": all(item["resolved"] for item in items) if items else True,
+                    "all_resolved": (not needs_header) and (all(item["resolved"] for item in items) if items else True),
                 }
             )
         return documents
@@ -95,6 +150,18 @@ def create_app(inbox_dir: Path, outbox_dir: Path) -> FastAPI:
         if inbox_dir.resolve() not in pdf_path.parents or not pdf_path.exists():
             raise HTTPException(status_code=404, detail="No encontrado")
         return FileResponse(pdf_path, media_type="application/pdf")
+
+    class HeaderOverrideInput(BaseModel):
+        cuit: Optional[str] = None
+        name: Optional[str] = None
+        number: Optional[str] = None
+        total: Optional[float] = None
+
+    @app.post("/api/documents/{filename}/header")
+    def save_header_override(filename: str, body: HeaderOverrideInput):
+        fields = {k: v for k, v in body.model_dump().items() if v not in (None, "")}
+        header_store.set(filename, fields)
+        return {"ok": True}
 
     class ResolveInput(BaseModel):
         cuit: str
@@ -112,7 +179,9 @@ def create_app(inbox_dir: Path, outbox_dir: Path) -> FastAPI:
         if not pdf_path.exists():
             raise HTTPException(status_code=404, detail="No encontrado")
 
-        result, outcomes = _load_document(pdf_path)
+        result, outcomes, needs_header = _load_document(pdf_path)
+        if needs_header:
+            raise HTTPException(status_code=400, detail="Faltan completar datos del encabezado (CUIT y/o numero)")
         if result.errors:
             raise HTTPException(status_code=400, detail="; ".join(result.errors))
 

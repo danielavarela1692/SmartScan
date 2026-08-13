@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     eiffel_items_fixture: str = "fixtures/items_catalog.example.json"
 
     match_store_path: str = "data/learned_matches.json"
+    header_overrides_path: str = "data/header_overrides.json"
 
 
 settings = Settings()

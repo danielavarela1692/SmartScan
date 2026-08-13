@@ -67,9 +67,13 @@
   .wizard h2 { font-size: 18px; margin: 0 0 4px; }
   .wizard .sub { font-size: 13.5px; color: var(--ink-soft); margin-bottom: 20px; }
 
-  .field-row { display: flex; justify-content: space-between; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
-  .field-row span:first-child { color: var(--ink-soft); }
-  .field-row span:last-child { font-weight: 600; text-align: right; }
+  .field-row { display: flex; flex-direction: column; gap: 5px; padding: 9px 0; border-bottom: 1px solid var(--line); }
+  .field-row label { font-size: 12px; color: var(--ink-soft); }
+  .field-row input { border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; font-size: 14px; font-family: var(--font); background: var(--surface); color: var(--ink); }
+  .field-row input:focus { outline: none; border-color: var(--accent); }
+  .field-row.missing input { border-color: var(--warn); background: var(--warn-soft); }
+  .field-hint { font-size: 11.5px; color: var(--warn); }
+  .header-note { background: var(--warn-soft); color: var(--warn); border-radius: var(--radius-sm); padding: 10px 14px; font-size: 12.5px; margin-bottom: 16px; }
 
   .line-summary { background: var(--surface-2); border-radius: var(--radius-sm); padding: 14px 16px; margin-bottom: 18px; }
   .line-summary .detail { font-weight: 600; font-size: 14.5px; margin-bottom: 4px; }
@@ -142,6 +146,7 @@ function renderList() {
   el.innerHTML = documents.map(doc => {
     let pill;
     if (doc.errors && doc.errors.length > 0) pill = '<span class="pill err">Error</span>';
+    else if (doc.needs_header) pill = '<span class="pill pending">Revisar datos</span>';
     else if (doc.all_resolved) pill = '<span class="pill ok">Todo resuelto</span>';
     else {
       const pending = doc.items.filter(i => !i.resolved).length;
@@ -188,7 +193,7 @@ function renderMain() {
     loadedPdfFor = null;
     return;
   }
-  if (doc.errors && doc.errors.length > 0) {
+  if (doc.errors && doc.errors.length > 0 && !doc.needs_header) {
     placeholder.style.display = 'none';
     panel.style.display = 'none';
     errorBanner.style.display = '';
@@ -226,15 +231,21 @@ function renderMain() {
 
   let wizardHtml;
   if (step === 'header') {
+    const note = doc.needs_header
+      ? `<div class="header-note">⚠ Faltan datos que la lectura automática no pudo encontrar (CUIT y/o número) — completalos a mano para poder seguir.</div>`
+      : '';
+    const missingCuit = !doc.cuit ? 'missing' : '';
+    const missingNumber = !doc.number ? 'missing' : '';
     wizardHtml = `<div class="step-label">Paso ${stepNumber} de ${totalSteps} — Datos generales</div>
       <h2>${doc.filename}</h2>
-      <div class="sub">Fijate que estos datos coincidan con lo que dice la factura de al lado.</div>
-      <div class="field-row"><span>CUIT</span><span>${doc.cuit}</span></div>
-      <div class="field-row"><span>Proveedor</span><span>${doc.name || '—'}</span></div>
-      <div class="field-row"><span>Número</span><span>${doc.number}</span></div>
-      <div class="field-row"><span>Total</span><span>$${doc.total.toFixed(2)}</span></div>
+      <div class="sub">Revisá que estos datos coincidan con la factura de al lado. Si algo está mal, corregilo acá.</div>
+      ${note}
+      <div class="field-row ${missingCuit}"><label>CUIT</label><input id="fieldCuit" value="${doc.cuit}" /></div>
+      <div class="field-row"><label>Proveedor</label><input id="fieldName" value="${doc.name}" /></div>
+      <div class="field-row ${missingNumber}"><label>Número</label><input id="fieldNumber" value="${doc.number}" /></div>
+      <div class="field-row"><label>Total</label><input id="fieldTotal" type="number" step="0.01" value="${doc.total ?? ''}" /></div>
       <div style="flex:1"></div>
-      <button class="primary-btn" onclick="advance()">Coincide, continuar →</button>`;
+      <button class="primary-btn" onclick="saveHeaderAndContinue('${doc.filename.replace(/'/g, "\\'")}')">Guardar y continuar →</button>`;
   } else if (step === 'item') {
     const item = doc.items[currentItemIndex];
     const candidatesHtml = item.candidates.map((c, i) => {
@@ -265,6 +276,31 @@ function renderMain() {
   }
 
   document.getElementById('wizard').innerHTML = `<div class="steps">${dots}</div>${wizardHtml}`;
+}
+
+async function saveHeaderAndContinue(filename) {
+  const cuit = document.getElementById('fieldCuit').value.trim();
+  const name = document.getElementById('fieldName').value.trim();
+  const number = document.getElementById('fieldNumber').value.trim();
+  const totalRaw = document.getElementById('fieldTotal').value.trim();
+  const body = { cuit, name, number };
+  if (totalRaw !== '') body.total = parseFloat(totalRaw);
+
+  await fetch(`/api/documents/${encodeURIComponent(filename)}/header`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+
+  const res = await fetch('/api/documents');
+  documents = await res.json();
+  renderList();
+  const doc = documents.find(d => d.filename === selectedFilename);
+  if (doc && doc.needs_header) {
+    renderMain(); // sigue faltando algo, se queda en este paso mostrando que falta
+  } else {
+    advance();
+  }
 }
 
 async function chooseItem(cuit, idx, conceptId) {
