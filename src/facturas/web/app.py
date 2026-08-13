@@ -14,6 +14,7 @@ from ..matching.store import normalize_text
 from ..pipeline import ExtractionResult, extract_raw, resolve_concepts, to_service_expense
 
 TEMPLATE_PATH = Path(__file__).parent / "review.html"
+STATUS_TEMPLATE_PATH = Path(__file__).parent / "status.html"
 
 
 def _ranked_candidates(detail: str, candidates: list[ProviderItem]) -> list[dict]:
@@ -95,8 +96,22 @@ def create_app(inbox_dir: Path, outbox_dir: Path) -> FastAPI:
         return result, outcomes, False
 
     @app.get("/", response_class=HTMLResponse)
+    def status_page():
+        return STATUS_TEMPLATE_PATH.read_text(encoding="utf-8")
+
+    @app.get("/panel", response_class=HTMLResponse)
     def index():
         return TEMPLATE_PATH.read_text(encoding="utf-8")
+
+    @app.get("/api/stats")
+    def stats():
+        pending = sum(
+            1
+            for pdf_path in inbox_dir.glob("*.pdf")
+            if not (outbox_dir / f"{pdf_path.name}.json").exists()
+        )
+        approved = sum(1 for _ in outbox_dir.glob("*.json"))
+        return {"pending": pending, "approved": approved}
 
     @app.get("/api/documents")
     def list_documents():

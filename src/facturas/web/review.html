@@ -38,6 +38,9 @@
   body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); }
   header { background: var(--surface); box-shadow: var(--shadow); padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; }
   header h1 { font-size: 17px; margin: 0; font-weight: 600; }
+  header .header-left { display: flex; align-items: center; gap: 14px; }
+  header a.back-link { font-size: 12.5px; color: var(--ink-soft); text-decoration: none; font-weight: 600; }
+  header a.back-link:hover { color: var(--accent); }
   header button { background: var(--accent-soft); color: var(--accent); border: none; padding: 8px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; }
 
   .layout { display: grid; grid-template-columns: 260px 1fr; gap: 20px; padding: 20px; align-items: start; }
@@ -98,7 +101,10 @@
 </head>
 <body>
   <header>
-    <h1>📋 Panel de revisión — Fase 2</h1>
+    <div class="header-left">
+      <a class="back-link" href="/">← Estado del proyecto</a>
+      <h1>📋 Panel de revisión — Fase 2</h1>
+    </div>
     <button onclick="loadDocuments()">Actualizar</button>
   </header>
   <div class="layout">
