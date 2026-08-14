@@ -15,6 +15,7 @@ from ..pipeline import ExtractionResult, extract_raw, resolve_concepts, to_servi
 
 TEMPLATE_PATH = Path(__file__).parent / "review.html"
 STATUS_TEMPLATE_PATH = Path(__file__).parent / "status.html"
+APPROVED_TEMPLATE_PATH = Path(__file__).parent / "approved.html"
 
 
 def _ranked_candidates(detail: str, candidates: list[ProviderItem]) -> list[dict]:
@@ -102,6 +103,26 @@ def create_app(inbox_dir: Path, outbox_dir: Path) -> FastAPI:
     @app.get("/panel", response_class=HTMLResponse)
     def index():
         return TEMPLATE_PATH.read_text(encoding="utf-8")
+
+    @app.get("/aprobadas", response_class=HTMLResponse)
+    def approved_page():
+        return APPROVED_TEMPLATE_PATH.read_text(encoding="utf-8")
+
+    @app.get("/api/approved")
+    def list_approved():
+        approved = []
+        for json_path in sorted(outbox_dir.glob("*.json"), key=lambda p: p.stat().st_mtime, reverse=True):
+            data = json.loads(json_path.read_text(encoding="utf-8"))
+            approved.append(
+                {
+                    "filename": json_path.stem,
+                    "cuit": data.get("emisor_cuit", ""),
+                    "name": data.get("emisor_nombre", ""),
+                    "number": data.get("comprobante_numero", ""),
+                    "total": data.get("importe_total"),
+                }
+            )
+        return approved
 
     @app.get("/api/stats")
     def stats():

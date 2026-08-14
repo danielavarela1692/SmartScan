@@ -3,121 +3,156 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Panel de revisión — Fase 2</title>
+<title>Facturas pendientes — SmartScan</title>
 <style>
   :root {
-    --bg: #F1F3F4;
-    --surface: #FFFFFF;
-    --surface-2: #F8F9FA;
-    --ink: #202124;
-    --ink-soft: #5F6368;
-    --accent: #1A73E8;
-    --accent-soft: #E8F0FE;
-    --good: #188038;
-    --good-soft: #E6F4EA;
-    --warn: #975A00;
-    --warn-soft: #FEF7E0;
-    --bad: #C5221F;
-    --bad-soft: #FCE8E6;
-    --line: #DADCE0;
-    --radius: 14px;
+    --paper: #FFFFFF;
+    --paper-2: #F7F5F1;
+    --ink: #2A2722;
+    --ink-soft: #6F6A5E;
+    --line: #E3DFD6;
+    --sidebar-bg: #38352E;
+    --sidebar-ink: #EDEAE2;
+    --sidebar-ink-soft: #A6A093;
+    --sidebar-active: #46423A;
+    --accent: #C1432E;
+    --accent-soft: #F6E4DF;
+    --good: #5C7A52;
+    --good-soft: #EBF0E6;
+    --warn: #A97328;
+    --warn-soft: #F5EAD9;
+    --bad: #8C2F2A;
+    --bad-soft: #F1E1DE;
+    --radius: 12px;
     --radius-sm: 8px;
-    --shadow: 0 1px 2px rgba(60,64,67,.30), 0 1px 3px 1px rgba(60,64,67,.15);
+    --shadow: 0 1px 2px rgba(42,39,34,.08), 0 2px 8px rgba(42,39,34,.06);
     --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --font-mono: ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
   }
   @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #202124; --surface: #292A2D; --surface-2: #35363A;
-      --ink: #E8EAED; --ink-soft: #9AA0A6; --accent: #8AB4F8; --accent-soft: #2A3A56;
-      --good: #81C995; --good-soft: #1E3A26; --warn: #FDD663; --warn-soft: #3D3320;
-      --bad: #F28B82; --bad-soft: #3D1F1D; --line: #3C4043;
-      --shadow: 0 1px 2px rgba(0,0,0,.5), 0 1px 3px 1px rgba(0,0,0,.35);
+    :root:not([data-theme="light"]) {
+      --paper: #211F1B; --paper-2: #2A2822; --ink: #EEEAE2; --ink-soft: #A6A093;
+      --line: #423E36; --sidebar-bg: #17150F; --sidebar-active: #29261F;
+      --accent: #E0725D; --accent-soft: #3D2621;
+      --good: #8FAE84; --good-soft: #26301F; --warn: #D9A75C; --warn-soft: #3A2E17;
+      --bad: #D98B82; --bad-soft: #3B211D;
+      --shadow: 0 1px 2px rgba(0,0,0,.4), 0 2px 8px rgba(0,0,0,.3);
     }
   }
+  :root[data-theme="dark"] {
+    --paper: #211F1B; --paper-2: #2A2822; --ink: #EEEAE2; --ink-soft: #A6A093;
+    --line: #423E36; --sidebar-bg: #17150F; --sidebar-active: #29261F;
+    --accent: #E0725D; --accent-soft: #3D2621;
+    --good: #8FAE84; --good-soft: #26301F; --warn: #D9A75C; --warn-soft: #3A2E17;
+    --bad: #D98B82; --bad-soft: #3B211D;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 2px 8px rgba(0,0,0,.3);
+  }
   * { box-sizing: border-box; }
-  body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); }
-  header { background: var(--surface); box-shadow: var(--shadow); padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; }
-  header h1 { font-size: 17px; margin: 0; font-weight: 600; }
-  header .header-left { display: flex; align-items: center; gap: 14px; }
-  header a.back-link { font-size: 12.5px; color: var(--ink-soft); text-decoration: none; font-weight: 600; }
-  header a.back-link:hover { color: var(--accent); }
-  header button { background: var(--accent-soft); color: var(--accent); border: none; padding: 8px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; }
+  html, body { margin: 0; height: 100%; background: var(--paper-2); color: var(--ink); font-family: var(--font); }
 
-  .layout { display: grid; grid-template-columns: 260px 1fr; gap: 20px; padding: 20px; align-items: start; }
-  .doc-list { display: flex; flex-direction: column; gap: 10px; }
-  .doc-card { background: var(--surface); border-radius: var(--radius-sm); box-shadow: var(--shadow); padding: 12px 14px; cursor: pointer; border: 2px solid transparent; }
-  .doc-card.active { border-color: var(--accent); }
-  .doc-card .fn { font-size: 13px; font-weight: 600; margin-bottom: 4px; word-break: break-word; }
-  .pill { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 9px; border-radius: 10px; }
+  .shell { display: grid; grid-template-columns: 216px 1fr; height: 100vh; }
+  .shell.collapsed { grid-template-columns: 64px 1fr; }
+
+  .sidebar { background: var(--sidebar-bg); color: var(--sidebar-ink); padding: 16px 12px; display: flex; flex-direction: column; overflow: hidden; }
+  .brand-row { display: flex; align-items: center; gap: 10px; padding: 4px 6px 20px; }
+  .brand-row .mark { width: 30px; height: 30px; border-radius: 8px; background: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 15px; color: white; flex-shrink: 0; }
+  .brand-row .name { font-size: 14.5px; font-weight: 700; letter-spacing: -0.01em; white-space: nowrap; }
+  .hamburger { background: none; border: none; color: var(--sidebar-ink-soft); cursor: pointer; padding: 6px; margin-left: auto; flex-shrink: 0; font-size: 15px; }
+  .hamburger:hover { color: var(--sidebar-ink); }
+  .shell.collapsed .brand-row .name, .shell.collapsed .nav-item .label, .shell.collapsed .nav-item .count { display: none; }
+  .shell.collapsed .brand-row { justify-content: center; padding: 4px 0 20px; }
+  .shell.collapsed .hamburger { margin: 0; }
+
+  a.nav-item, .nav-item { display: flex; align-items: center; gap: 11px; padding: 9px 10px; border-radius: var(--radius-sm); font-size: 13.5px; color: var(--sidebar-ink-soft); cursor: pointer; margin-bottom: 2px; text-decoration: none; white-space: nowrap; }
+  .nav-item .ic { width: 18px; text-align: center; flex-shrink: 0; }
+  .nav-item.active { background: var(--sidebar-active); color: var(--sidebar-ink); font-weight: 600; }
+  .nav-item .count { margin-left: auto; background: var(--accent); color: white; font-size: 10.5px; font-weight: 700; padding: 1px 7px; border-radius: 9px; }
+  .nav-item:hover:not(.active) { color: var(--sidebar-ink); }
+  .sidebar-foot { margin-top: auto; padding: 10px 10px 0; font-size: 11.5px; color: var(--sidebar-ink-soft); border-top: 1px solid rgba(255,255,255,.08); padding-top: 14px; white-space: nowrap; overflow: hidden; }
+
+  .main { display: flex; flex-direction: column; min-width: 0; }
+  .topbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid var(--line); background: var(--paper); flex-shrink: 0; }
+  .topbar h1 { font-size: 17px; margin: 0; }
+  .topbar button.refresh { background: var(--paper-2); color: var(--ink-soft); border: 1px solid var(--line); padding: 7px 14px; border-radius: 20px; font-size: 12.5px; font-weight: 600; cursor: pointer; }
+
+  .body { display: grid; grid-template-columns: 300px 1fr; flex: 1; min-height: 0; }
+  .list-col { border-right: 1px solid var(--line); overflow-y: auto; padding: 14px 10px; background: var(--paper); }
+  .list-empty { color: var(--ink-soft); font-size: 13px; padding: 24px 14px; text-align: center; }
+  .doc-row { padding: 12px 12px; border-radius: var(--radius-sm); cursor: pointer; margin-bottom: 3px; border: 1px solid transparent; }
+  .doc-row:hover { background: var(--paper-2); }
+  .doc-row.active { background: var(--accent-soft); border-color: var(--accent); }
+  .doc-row .prov { font-weight: 600; font-size: 13.5px; margin-bottom: 3px; }
+  .doc-row .meta { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .doc-row .amt { font-size: 12px; color: var(--ink-soft); font-family: var(--font-mono); }
+
+  .pill { display: inline-flex; align-items: center; gap: 5px; font-size: 10.5px; font-weight: 700; padding: 2px 9px; border-radius: 10px; white-space: nowrap; }
   .pill.ok { background: var(--good-soft); color: var(--good); }
   .pill.pending { background: var(--warn-soft); color: var(--warn); }
-  .pill.err { background: var(--bad-soft); color: var(--bad); }
-  .empty, .placeholder { color: var(--ink-soft); font-size: 14px; padding: 40px; text-align: center; }
+  .pill.bad { background: var(--bad-soft); color: var(--bad); }
 
-  .panel { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; }
-  .pdf-col { display: flex; flex-direction: column; gap: 8px; }
-  .pdf-open-link { align-self: flex-start; font-size: 12.5px; color: var(--accent); text-decoration: none; font-weight: 600; }
+  .detail-col { overflow-y: auto; padding: 22px 28px; }
+  .placeholder { color: var(--ink-soft); font-size: 14px; padding: 60px; text-align: center; }
+
+  .detail-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; flex-wrap: wrap; }
+  .detail-head h2 { font-size: 16.5px; margin: 0; word-break: break-word; }
+
+  .detail-panel { display: grid; grid-template-columns: minmax(0,1.1fr) minmax(0,1fr); gap: 22px; align-items: start; }
+  .pdf-col { display: flex; flex-direction: column; gap: 8px; position: sticky; top: 0; }
+  .pdf-open-link { font-size: 12px; color: var(--accent); text-decoration: none; font-weight: 600; }
   .pdf-open-link:hover { text-decoration: underline; }
-  .pdf-box { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; height: 76vh; }
+  .pdf-box { background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; height: 74vh; box-shadow: var(--shadow); }
   .pdf-box embed { width: 100%; height: 100%; border: none; }
 
-  .wizard { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); padding: 24px; min-height: 76vh; display: flex; flex-direction: column; }
-  .steps { display: flex; gap: 6px; margin-bottom: 18px; }
-  .steps .dot { flex: 1; height: 4px; border-radius: 2px; background: var(--line); }
-  .steps .dot.done { background: var(--good); }
-  .steps .dot.current { background: var(--accent); }
-  .step-label { font-size: 11.5px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--accent); margin-bottom: 6px; }
-  .wizard h2 { font-size: 18px; margin: 0 0 4px; }
-  .wizard .sub { font-size: 13.5px; color: var(--ink-soft); margin-bottom: 20px; }
+  .form-card { background: var(--paper); border-radius: var(--radius); box-shadow: var(--shadow); padding: 18px 20px; margin-bottom: 16px; }
+  .form-card h3 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-soft); margin: 0 0 14px; }
+  .header-note { background: var(--warn-soft); color: var(--warn); border-radius: var(--radius-sm); padding: 10px 14px; font-size: 12.5px; margin-bottom: 14px; }
+  .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  .field label { font-size: 11.5px; color: var(--ink-soft); }
+  .field input { border: 1px solid var(--line); border-radius: 6px; padding: 9px 10px; font-size: 13.5px; font-family: var(--font); background: var(--paper); color: var(--ink); }
+  .field input:focus { outline: none; border-color: var(--accent); }
+  .field.missing input { border-color: var(--warn); background: var(--warn-soft); }
+  .save-row { display: flex; justify-content: flex-end; margin-top: 12px; }
+  .btn { border: none; border-radius: 20px; font-size: 13px; font-weight: 600; padding: 9px 18px; cursor: pointer; font-family: var(--font); }
+  .btn.primary { background: var(--accent); color: white; }
+  .btn.primary:disabled { background: var(--line); color: var(--ink-soft); cursor: not-allowed; }
+  .btn.ghost { background: transparent; color: var(--ink-soft); border: 1px solid var(--line); }
+  .btn.small { padding: 6px 14px; font-size: 12px; }
 
-  .field-row { display: flex; flex-direction: column; gap: 5px; padding: 9px 0; border-bottom: 1px solid var(--line); }
-  .field-row label { font-size: 12px; color: var(--ink-soft); }
-  .field-row input { border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; font-size: 14px; font-family: var(--font); background: var(--surface); color: var(--ink); }
-  .field-row input:focus { outline: none; border-color: var(--accent); }
-  .field-row.missing input { border-color: var(--warn); background: var(--warn-soft); }
-  .field-hint { font-size: 11.5px; color: var(--warn); }
-  .header-note { background: var(--warn-soft); color: var(--warn); border-radius: var(--radius-sm); padding: 10px 14px; font-size: 12.5px; margin-bottom: 16px; }
+  .item-row { border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 12px 14px; margin-bottom: 10px; }
+  .item-row.resolved { border-color: var(--good); background: var(--good-soft); }
+  .item-row .detail { font-weight: 600; font-size: 13px; margin-bottom: 4px; }
+  .item-row .meta { font-size: 11.5px; color: var(--ink-soft); margin-bottom: 8px; }
+  .item-row .resolved-tag { font-size: 12.5px; color: var(--good); font-weight: 600; }
+  .item-row select { width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--line); font-size: 13px; font-family: var(--font); background: var(--paper); color: var(--ink); }
 
-  .line-summary { background: var(--surface-2); border-radius: var(--radius-sm); padding: 14px 16px; margin-bottom: 18px; }
-  .line-summary .detail { font-weight: 600; font-size: 14.5px; margin-bottom: 4px; }
-  .line-summary .meta { font-size: 12.5px; color: var(--ink-soft); }
+  .approve-btn { width: 100%; padding: 13px; font-size: 14px; }
 
-  .candidate-list { display: flex; flex-direction: column; gap: 8px; overflow-y: auto; flex: 1; }
-  .candidate { display: flex; align-items: center; justify-content: space-between; gap: 10px; border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 12px 14px; cursor: pointer; text-align: left; background: var(--surface); font-family: var(--font); font-size: 13.5px; color: var(--ink); }
-  .candidate:hover { border-color: var(--accent); background: var(--accent-soft); }
-  .candidate.top { border-color: var(--accent); }
-  .candidate .badge { font-size: 10.5px; font-weight: 700; color: var(--accent); background: var(--accent-soft); padding: 2px 8px; border-radius: 10px; white-space: nowrap; }
-
-  .primary-btn { margin-top: 20px; width: 100%; padding: 13px; border: none; border-radius: 20px; background: var(--accent); color: white; font-size: 14.5px; font-weight: 600; cursor: pointer; }
-  .primary-btn:disabled { background: var(--line); color: var(--ink-soft); cursor: not-allowed; }
-  .ghost-btn { margin-top: 10px; width: 100%; padding: 10px; border: 1px solid var(--line); border-radius: 20px; background: transparent; color: var(--ink-soft); font-size: 13px; font-weight: 600; cursor: pointer; }
-
-  .resolved-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 8px; }
-  .resolved-row { display: flex; justify-content: space-between; font-size: 13px; background: var(--good-soft); color: var(--good); padding: 8px 12px; border-radius: 8px; }
-
-  .success-icon { font-size: 40px; text-align: center; margin-bottom: 8px; }
   .error-banner { background: var(--bad-soft); color: var(--bad); border-radius: var(--radius-sm); padding: 16px; font-size: 13.5px; }
 </style>
 </head>
 <body>
-  <header>
-    <div class="header-left">
-      <a class="back-link" href="/">← Estado del proyecto</a>
-      <h1>📋 Panel de revisión — Fase 2</h1>
+  <div class="shell" id="shell">
+    <div class="sidebar">
+      <div class="brand-row">
+        <div class="mark">S</div>
+        <div class="name">SmartScan</div>
+        <button class="hamburger" onclick="document.getElementById('shell').classList.toggle('collapsed')" title="Contraer menú">☰</button>
+      </div>
+      <a class="nav-item" href="/"><span class="ic">⌂</span><span class="label">Inicio</span></a>
+      <a class="nav-item active" href="/panel"><span class="ic">▤</span><span class="label">Facturas pendientes</span><span class="count" id="navCount">0</span></a>
+      <a class="nav-item" href="/aprobadas"><span class="ic">✓</span><span class="label">Aprobadas</span></a>
+      <div class="sidebar-foot">Gauss Sistemas<br>Cuenta: Producción</div>
     </div>
-    <button onclick="loadDocuments()">Actualizar</button>
-  </header>
-  <div class="layout">
-    <div class="doc-list" id="docList"></div>
-    <div>
-      <div class="placeholder" id="placeholder">Elegí una factura de la izquierda</div>
-      <div class="error-banner" id="errorBanner" style="display:none"></div>
-      <div class="panel" id="panel" style="display:none">
-        <div class="pdf-col">
-          <a class="pdf-open-link" id="pdfLink" href="#" target="_blank">↗ Si no ves la factura acá abajo, abrila en una pestaña nueva</a>
-          <div class="pdf-box"><embed id="pdfEmbed" type="application/pdf" /></div>
-        </div>
-        <div class="wizard" id="wizard"></div>
+
+    <div class="main">
+      <div class="topbar">
+        <h1>Facturas pendientes</h1>
+        <button class="refresh" onclick="loadDocuments()">Actualizar</button>
+      </div>
+      <div class="body">
+        <div class="list-col" id="listCol"></div>
+        <div class="detail-col" id="detailCol"><div class="placeholder">Elegí una factura de la izquierda</div></div>
       </div>
     </div>
   </div>
@@ -126,165 +161,145 @@
 let documents = [];
 let selectedFilename = null;
 let loadedPdfFor = null;
-let step = 'header'; // 'header' | 'item' | 'final'
-let currentItemIndex = null;
 
 async function loadDocuments() {
   const res = await fetch('/api/documents');
   documents = await res.json();
+  document.getElementById('navCount').textContent = documents.length;
   renderList();
   if (selectedFilename && !documents.find(d => d.filename === selectedFilename)) {
     selectedFilename = null;
   }
   if (!selectedFilename && documents.length > 0) {
-    selectDoc(documents[0].filename);
-    return;
+    selectedFilename = documents[0].filename;
   }
-  renderMain();
+  renderDetail();
+}
+
+function statusPill(doc) {
+  if (doc.errors && doc.errors.length > 0 && !doc.needs_header) return '<span class="pill bad">Error</span>';
+  if (doc.needs_header) return '<span class="pill bad">Faltan datos</span>';
+  if (doc.all_resolved) return '<span class="pill ok">Resuelta</span>';
+  const pending = doc.items.filter(i => !i.resolved).length;
+  return `<span class="pill pending">${pending} pendiente(s)</span>`;
 }
 
 function renderList() {
-  const el = document.getElementById('docList');
+  const el = document.getElementById('listCol');
   if (documents.length === 0) {
-    el.innerHTML = '<div class="empty">No hay facturas pendientes en ./inbox</div>';
+    el.innerHTML = '<div class="list-empty">No hay facturas pendientes en ./inbox</div>';
     return;
   }
   el.innerHTML = documents.map(doc => {
-    let pill;
-    if (doc.errors && doc.errors.length > 0) pill = '<span class="pill err">Error</span>';
-    else if (doc.needs_header) pill = '<span class="pill pending">Revisar datos</span>';
-    else if (doc.all_resolved) pill = '<span class="pill ok">Todo resuelto</span>';
-    else {
-      const pending = doc.items.filter(i => !i.resolved).length;
-      pill = `<span class="pill pending">${pending} pendiente(s)</span>`;
-    }
     const active = doc.filename === selectedFilename ? 'active' : '';
-    return `<div class="doc-card ${active}" onclick="selectDoc('${doc.filename.replace(/'/g, "\\'")}')">
-      <div class="fn">${doc.filename}</div>${pill}
+    const total = (doc.total !== null && doc.total !== undefined) ? `$${doc.total.toFixed(2)}` : '—';
+    return `<div class="doc-row ${active}" onclick="selectDoc('${doc.filename.replace(/'/g, "\\'")}')">
+      <div class="prov">${doc.name || doc.filename}</div>
+      <div class="meta"><span class="amt">${total}</span>${statusPill(doc)}</div>
     </div>`;
   }).join('');
 }
 
 function selectDoc(filename) {
   selectedFilename = filename;
-  step = 'header';
-  currentItemIndex = null;
   renderList();
-  renderMain();
+  renderDetail();
 }
 
-function advance() {
-  const doc = documents.find(d => d.filename === selectedFilename);
-  const idx = doc.items.findIndex(i => !i.resolved);
-  if (idx === -1) {
-    step = 'final';
-    currentItemIndex = null;
-  } else {
-    step = 'item';
-    currentItemIndex = idx;
-  }
-  renderMain();
-}
-
-function renderMain() {
-  const placeholder = document.getElementById('placeholder');
-  const errorBanner = document.getElementById('errorBanner');
-  const panel = document.getElementById('panel');
+function renderDetail() {
+  const el = document.getElementById('detailCol');
   const doc = documents.find(d => d.filename === selectedFilename);
 
   if (!doc) {
-    placeholder.style.display = '';
-    errorBanner.style.display = 'none';
-    panel.style.display = 'none';
+    el.innerHTML = '<div class="placeholder">Elegí una factura de la izquierda</div>';
     loadedPdfFor = null;
     return;
   }
-  if (doc.errors && doc.errors.length > 0 && !doc.needs_header) {
-    placeholder.style.display = 'none';
-    panel.style.display = 'none';
-    errorBanner.style.display = '';
-    errorBanner.innerHTML = `<strong>${doc.filename}</strong> no se pudo leer:<br>${doc.errors.join('; ')}`;
-    loadedPdfFor = null;
-    return;
-  }
-  placeholder.style.display = 'none';
-  errorBanner.style.display = 'none';
-  panel.style.display = '';
 
-  // El <embed> del PDF nunca se recrea: solo cambia el src cuando cambia el
-  // documento seleccionado. Recrearlo en cada paso (via innerHTML) es lo que
-  // hacia que el visor de PDF del navegador quedara en blanco/negro.
+  if (doc.errors && doc.errors.length > 0 && !doc.needs_header) {
+    el.innerHTML = `<div class="error-banner"><strong>${doc.filename}</strong> no se pudo leer:<br>${doc.errors.join('; ')}</div>`;
+    loadedPdfFor = null;
+    return;
+  }
+
+  const pdfUrl = `/api/pdf/${encodeURIComponent(doc.filename)}`;
+  const missingCuit = !doc.cuit ? 'missing' : '';
+  const missingNumber = !doc.number ? 'missing' : '';
+  const headerNote = doc.needs_header
+    ? `<div class="header-note">⚠ Faltan datos que la lectura automática no encontró — completalos para poder ver las líneas y aprobar.</div>`
+    : '';
+
+  let itemsHtml = '<p style="color:var(--ink-soft); font-size:13px;">Completá CUIT y número para ver las líneas.</p>';
+  if (!doc.needs_header) {
+    itemsHtml = doc.items.map((item, idx) => {
+      if (item.resolved) {
+        return `<div class="item-row resolved">
+          <div class="detail">${item.detail}</div>
+          <div class="meta">cant. ${item.quantity} · $${item.total.toFixed(2)}</div>
+          <div class="resolved-tag">✓ Ítem de compra: ${item.concept_id}</div>
+        </div>`;
+      }
+      const options = item.candidates.map((c, i) =>
+        `<option value="${c.concept_id}">${c.description}${i === 0 ? ' — sugerido' : ` (${c.score}%)`}</option>`
+      ).join('');
+      return `<div class="item-row">
+        <div class="detail">${item.detail}</div>
+        <div class="meta">cant. ${item.quantity} · $${item.total.toFixed(2)} — sin coincidencia exacta</div>
+        <select onchange="resolveItem('${doc.cuit}', ${idx}, this.value)">
+          <option value="">Elegí un ítem de compra…</option>
+          ${options}
+        </select>
+      </div>`;
+    }).join('') || '<p style="color:var(--ink-soft); font-size:13px;">Sin líneas detectadas.</p>';
+  }
+
+  el.innerHTML = `
+    <div class="detail-head">
+      <h2>${doc.name || doc.filename}</h2>
+      ${statusPill(doc)}
+    </div>
+    <div class="detail-panel">
+      <div class="pdf-col">
+        <a class="pdf-open-link" id="pdfLink" href="#" target="_blank">↗ Abrir la factura en una pestaña nueva</a>
+        <div class="pdf-box"><embed id="pdfEmbed" type="application/pdf" /></div>
+      </div>
+      <div>
+        <div class="form-card">
+          <h3>Datos generales</h3>
+          ${headerNote}
+          <div class="field-grid">
+            <div class="field ${missingCuit}"><label>CUIT</label><input id="fieldCuit" value="${doc.cuit}"></div>
+            <div class="field"><label>Proveedor</label><input id="fieldName" value="${doc.name}"></div>
+            <div class="field ${missingNumber}"><label>Número</label><input id="fieldNumber" value="${doc.number}"></div>
+            <div class="field"><label>Total</label><input id="fieldTotal" type="number" step="0.01" value="${doc.total ?? ''}"></div>
+          </div>
+          <div class="save-row"><button class="btn ghost small" onclick="saveHeader('${doc.filename.replace(/'/g, "\\'")}')">Guardar cambios</button></div>
+        </div>
+        <div class="form-card">
+          <h3>Líneas de la factura</h3>
+          ${itemsHtml}
+        </div>
+        <button class="btn primary approve-btn" ${doc.all_resolved ? '' : 'disabled'} onclick="approve('${doc.filename.replace(/'/g, "\\'")}')">
+          ${doc.all_resolved ? 'Aprobar y guardar' : 'Resolvé todo lo pendiente para aprobar'}
+        </button>
+      </div>
+    </div>
+  `;
+
+  // El <embed> del PDF nunca se recrea via innerHTML de nuevo despues de este
+  // punto salvo que cambie el documento - recrearlo en cada re-render hace
+  // que el visor de PDF del navegador quede en blanco/negro (Edge sobre todo).
   if (loadedPdfFor !== doc.filename) {
-    const pdfUrl = `/api/pdf/${encodeURIComponent(doc.filename)}`;
     document.getElementById('pdfLink').href = pdfUrl;
     document.getElementById('pdfEmbed').src = pdfUrl;
     loadedPdfFor = doc.filename;
-  }
-
-  const pendingCount = doc.items.filter(i => !i.resolved).length;
-  const totalSteps = 2 + doc.items.length; // datos generales + N items + aprobar
-  let stepNumber = 1;
-  if (step === 'item') stepNumber = 2 + currentItemIndex;
-  if (step === 'final') stepNumber = totalSteps;
-
-  const dots = Array.from({ length: totalSteps }, (_, i) => {
-    const n = i + 1;
-    let cls = 'dot';
-    if (n < stepNumber) cls += ' done';
-    else if (n === stepNumber) cls += ' current';
-    return `<div class="${cls}"></div>`;
-  }).join('');
-
-  let wizardHtml;
-  if (step === 'header') {
-    const note = doc.needs_header
-      ? `<div class="header-note">⚠ Faltan datos que la lectura automática no pudo encontrar (CUIT y/o número) — completalos a mano para poder seguir.</div>`
-      : '';
-    const missingCuit = !doc.cuit ? 'missing' : '';
-    const missingNumber = !doc.number ? 'missing' : '';
-    wizardHtml = `<div class="step-label">Paso ${stepNumber} de ${totalSteps} — Datos generales</div>
-      <h2>${doc.filename}</h2>
-      <div class="sub">Revisá que estos datos coincidan con la factura de al lado. Si algo está mal, corregilo acá.</div>
-      ${note}
-      <div class="field-row ${missingCuit}"><label>CUIT</label><input id="fieldCuit" value="${doc.cuit}" /></div>
-      <div class="field-row"><label>Proveedor</label><input id="fieldName" value="${doc.name}" /></div>
-      <div class="field-row ${missingNumber}"><label>Número</label><input id="fieldNumber" value="${doc.number}" /></div>
-      <div class="field-row"><label>Total</label><input id="fieldTotal" type="number" step="0.01" value="${doc.total ?? ''}" /></div>
-      <div style="flex:1"></div>
-      <button class="primary-btn" onclick="saveHeaderAndContinue('${doc.filename.replace(/'/g, "\\'")}')">Guardar y continuar →</button>`;
-  } else if (step === 'item') {
-    const item = doc.items[currentItemIndex];
-    const candidatesHtml = item.candidates.map((c, i) => {
-      const top = i === 0 ? 'top' : '';
-      const badge = i === 0 ? '<span class="badge">Sugerido</span>' : `<span class="badge" style="background:transparent;color:var(--ink-soft)">${c.score}%</span>`;
-      return `<button class="candidate ${top}" onclick="chooseItem('${doc.cuit}', ${currentItemIndex}, '${c.concept_id}')">
-        <span>${c.description}</span>${badge}
-      </button>`;
-    }).join('');
-    wizardHtml = `<div class="step-label">Paso ${stepNumber} de ${totalSteps} — Elegí el ítem de compra</div>
-      <h2>Línea sin coincidencia exacta</h2>
-      <div class="sub">Todavía quedan ${pendingCount} línea(s) por resolver. Elegí a qué ítem corresponde ésta:</div>
-      <div class="line-summary">
-        <div class="detail">${item.detail}</div>
-        <div class="meta">cantidad ${item.quantity} · $${item.total.toFixed(2)}</div>
-      </div>
-      <div class="candidate-list">${candidatesHtml}</div>`;
   } else {
-    const rows = doc.items.map(i => `<div class="resolved-row"><span>${i.detail}</span><span>✓ ${i.concept_id}</span></div>`).join('');
-    wizardHtml = `<div class="step-label">Paso ${stepNumber} de ${totalSteps} — Listo</div>
-      <div class="success-icon">✅</div>
-      <h2 style="text-align:center;">Todas las líneas quedaron resueltas</h2>
-      <div class="sub" style="text-align:center;">Revisá el resumen y aprobá para dejarla lista para la fase 3.</div>
-      <div class="resolved-list">${rows}</div>
-      <div style="flex:1"></div>
-      <button class="primary-btn" onclick="approve('${doc.filename.replace(/'/g, "\\'")}')">Aprobar y guardar</button>
-      <button class="ghost-btn" onclick="step='header'; renderMain();">← Volver a revisar los datos</button>`;
+    document.getElementById('pdfLink').href = pdfUrl;
+    document.getElementById('pdfEmbed').src = pdfUrl;
   }
-
-  document.getElementById('wizard').innerHTML = `<div class="steps">${dots}</div>${wizardHtml}`;
 }
 
-async function saveHeaderAndContinue(filename) {
+async function saveHeader(filename) {
   const cuit = document.getElementById('fieldCuit').value.trim();
   const name = document.getElementById('fieldName').value.trim();
   const number = document.getElementById('fieldNumber').value.trim();
@@ -297,19 +312,11 @@ async function saveHeaderAndContinue(filename) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   });
-
-  const res = await fetch('/api/documents');
-  documents = await res.json();
-  renderList();
-  const doc = documents.find(d => d.filename === selectedFilename);
-  if (doc && doc.needs_header) {
-    renderMain(); // sigue faltando algo, se queda en este paso mostrando que falta
-  } else {
-    advance();
-  }
+  await loadDocuments();
 }
 
-async function chooseItem(cuit, idx, conceptId) {
+async function resolveItem(cuit, idx, conceptId) {
+  if (!conceptId) return;
   const doc = documents.find(d => d.filename === selectedFilename);
   const item = doc.items[idx];
   await fetch('/api/resolve', {
@@ -317,10 +324,7 @@ async function chooseItem(cuit, idx, conceptId) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ cuit, detail: item.detail, concept_id: conceptId }),
   });
-  const res = await fetch('/api/documents');
-  documents = await res.json();
-  renderList();
-  advance();
+  await loadDocuments();
 }
 
 async function approve(filename) {

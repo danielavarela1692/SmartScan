@@ -3,113 +3,152 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Estado del proyecto — Automatización de facturas</title>
+<title>Inicio — SmartScan</title>
 <style>
   :root {
-    --bg: #F1F3F4;
-    --surface: #FFFFFF;
-    --surface-2: #F8F9FA;
-    --ink: #202124;
-    --ink-soft: #5F6368;
-    --accent: #1A73E8;
-    --accent-soft: #E8F0FE;
-    --good: #188038;
-    --good-soft: #E6F4EA;
-    --warn: #975A00;
-    --warn-soft: #FEF7E0;
-    --line: #DADCE0;
-    --radius: 16px;
-    --radius-sm: 10px;
-    --shadow: 0 1px 2px rgba(60,64,67,.30), 0 1px 3px 1px rgba(60,64,67,.15);
+    --paper: #FFFFFF;
+    --paper-2: #F7F5F1;
+    --ink: #2A2722;
+    --ink-soft: #6F6A5E;
+    --line: #E3DFD6;
+    --sidebar-bg: #38352E;
+    --sidebar-ink: #EDEAE2;
+    --sidebar-ink-soft: #A6A093;
+    --sidebar-active: #46423A;
+    --accent: #C1432E;
+    --accent-soft: #F6E4DF;
+    --good: #5C7A52;
+    --good-soft: #EBF0E6;
+    --warn: #A97328;
+    --warn-soft: #F5EAD9;
+    --radius: 12px;
+    --radius-sm: 8px;
+    --shadow: 0 1px 2px rgba(42,39,34,.08), 0 2px 8px rgba(42,39,34,.06);
     --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   }
   @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #202124; --surface: #292A2D; --surface-2: #35363A;
-      --ink: #E8EAED; --ink-soft: #9AA0A6; --accent: #8AB4F8; --accent-soft: #2A3A56;
-      --good: #81C995; --good-soft: #1E3A26; --warn: #FDD663; --warn-soft: #3D3320;
-      --line: #3C4043;
-      --shadow: 0 1px 2px rgba(0,0,0,.5), 0 1px 3px 1px rgba(0,0,0,.35);
+    :root:not([data-theme="light"]) {
+      --paper: #211F1B; --paper-2: #2A2822; --ink: #EEEAE2; --ink-soft: #A6A093;
+      --line: #423E36; --sidebar-bg: #17150F; --sidebar-active: #29261F;
+      --accent: #E0725D; --accent-soft: #3D2621;
+      --good: #8FAE84; --good-soft: #26301F; --warn: #D9A75C; --warn-soft: #3A2E17;
+      --shadow: 0 1px 2px rgba(0,0,0,.4), 0 2px 8px rgba(0,0,0,.3);
     }
   }
+  :root[data-theme="dark"] {
+    --paper: #211F1B; --paper-2: #2A2822; --ink: #EEEAE2; --ink-soft: #A6A093;
+    --line: #423E36; --sidebar-bg: #17150F; --sidebar-active: #29261F;
+    --accent: #E0725D; --accent-soft: #3D2621;
+    --good: #8FAE84; --good-soft: #26301F; --warn: #D9A75C; --warn-soft: #3A2E17;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 2px 8px rgba(0,0,0,.3);
+  }
   * { box-sizing: border-box; }
-  body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); }
-  .page { max-width: 760px; margin: 0 auto; padding: 48px 24px 80px; }
+  html, body { margin: 0; height: 100%; background: var(--paper-2); color: var(--ink); font-family: var(--font); }
 
-  .hero { margin-bottom: 32px; }
-  .eyebrow { font-size: 12.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); margin: 0 0 10px; }
-  h1 { font-size: 28px; margin: 0 0 8px; letter-spacing: -0.01em; }
-  .dek { font-size: 15px; color: var(--ink-soft); margin: 0; max-width: 56ch; }
+  .shell { display: grid; grid-template-columns: 216px 1fr; min-height: 100vh; }
+  .shell.collapsed { grid-template-columns: 64px 1fr; }
+  .sidebar { background: var(--sidebar-bg); color: var(--sidebar-ink); padding: 16px 12px; display: flex; flex-direction: column; overflow: hidden; }
+  .brand-row { display: flex; align-items: center; gap: 10px; padding: 4px 6px 20px; }
+  .brand-row .mark { width: 30px; height: 30px; border-radius: 8px; background: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 15px; color: white; flex-shrink: 0; }
+  .brand-row .name { font-size: 14.5px; font-weight: 700; letter-spacing: -0.01em; white-space: nowrap; }
+  .hamburger { background: none; border: none; color: var(--sidebar-ink-soft); cursor: pointer; padding: 6px; margin-left: auto; flex-shrink: 0; font-size: 15px; }
+  .hamburger:hover { color: var(--sidebar-ink); }
+  .shell.collapsed .brand-row .name, .shell.collapsed .nav-item .label, .shell.collapsed .nav-item .count { display: none; }
+  .shell.collapsed .brand-row { justify-content: center; padding: 4px 0 20px; }
+  .shell.collapsed .hamburger { margin: 0; }
+  a.nav-item, .nav-item { display: flex; align-items: center; gap: 11px; padding: 9px 10px; border-radius: var(--radius-sm); font-size: 13.5px; color: var(--sidebar-ink-soft); cursor: pointer; margin-bottom: 2px; text-decoration: none; white-space: nowrap; }
+  .nav-item .ic { width: 18px; text-align: center; flex-shrink: 0; }
+  .nav-item.active { background: var(--sidebar-active); color: var(--sidebar-ink); font-weight: 600; }
+  .nav-item .count { margin-left: auto; background: var(--accent); color: white; font-size: 10.5px; font-weight: 700; padding: 1px 7px; border-radius: 9px; }
+  .nav-item:hover:not(.active) { color: var(--sidebar-ink); }
+  .sidebar-foot { margin-top: auto; padding: 10px 10px 0; font-size: 11.5px; color: var(--sidebar-ink-soft); border-top: 1px solid rgba(255,255,255,.08); padding-top: 14px; white-space: nowrap; overflow: hidden; }
 
-  .stats { display: flex; gap: 12px; margin: 24px 0 36px; }
-  .stat { flex: 1; background: var(--surface); border-radius: var(--radius-sm); box-shadow: var(--shadow); padding: 16px 18px; }
-  .stat .num { font-size: 26px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .main { padding: 40px 40px 64px; max-width: 780px; }
+  .eyebrow { font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); margin: 0 0 10px; }
+  h1 { font-size: 26px; margin: 0 0 8px; letter-spacing: -0.01em; }
+  .dek { font-size: 14.5px; color: var(--ink-soft); margin: 0; max-width: 56ch; }
+
+  .stats { display: flex; gap: 12px; margin: 24px 0 32px; }
+  .stat { flex: 1; background: var(--paper); border-radius: var(--radius-sm); box-shadow: var(--shadow); padding: 16px 18px; }
+  .stat .num { font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums; }
   .stat .label { font-size: 12px; color: var(--ink-soft); margin-top: 2px; }
 
-  .phase { display: flex; gap: 16px; background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px 22px; margin-bottom: 14px; }
-  .phase-num { flex-shrink: 0; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; }
+  .phase { display: flex; gap: 16px; background: var(--paper); border-radius: var(--radius); box-shadow: var(--shadow); padding: 18px 20px; margin-bottom: 12px; }
+  .phase-num { flex-shrink: 0; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; }
   .phase.done .phase-num { background: var(--good-soft); color: var(--good); }
   .phase.next .phase-num { background: var(--warn-soft); color: var(--warn); }
-  .phase.todo .phase-num { background: var(--surface-2); color: var(--ink-soft); }
+  .phase.todo .phase-num { background: var(--paper-2); color: var(--ink-soft); }
   .phase-body { flex: 1; }
-  .phase-title { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
-  .phase-title h2 { font-size: 15.5px; margin: 0; }
+  .phase-title { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; flex-wrap: wrap; }
+  .phase-title h2 { font-size: 15px; margin: 0; }
   .badge { font-size: 10.5px; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; padding: 2px 9px; border-radius: 10px; }
   .badge.done { background: var(--good-soft); color: var(--good); }
   .badge.next { background: var(--warn-soft); color: var(--warn); }
-  .badge.todo { background: var(--surface-2); color: var(--ink-soft); }
-  .phase-desc { font-size: 13.5px; color: var(--ink-soft); margin: 0; }
-  .phase-cta { margin-top: 12px; }
-  .phase-cta a { display: inline-block; background: var(--accent); color: white; text-decoration: none; font-size: 13.5px; font-weight: 600; padding: 9px 18px; border-radius: 18px; }
+  .badge.todo { background: var(--paper-2); color: var(--ink-soft); }
+  .phase-desc { font-size: 13px; color: var(--ink-soft); margin: 0; }
+  .phase-cta { margin-top: 10px; }
+  .phase-cta a { display: inline-block; background: var(--accent); color: white; text-decoration: none; font-size: 13px; font-weight: 600; padding: 8px 16px; border-radius: 18px; }
   .phase-cta a:hover { opacity: 0.92; }
 
-  footer { margin-top: 32px; font-size: 12.5px; color: var(--ink-soft); text-align: center; }
+  .scope-note { margin-top: 26px; font-size: 12.5px; color: var(--ink-soft); }
 </style>
 </head>
 <body>
-  <div class="page">
-    <div class="hero">
+  <div class="shell" id="shell">
+    <div class="sidebar">
+      <div class="brand-row">
+        <div class="mark">S</div>
+        <div class="name">SmartScan</div>
+        <button class="hamburger" onclick="document.getElementById('shell').classList.toggle('collapsed')" title="Contraer menú">☰</button>
+      </div>
+      <a class="nav-item active" href="/"><span class="ic">⌂</span><span class="label">Inicio</span></a>
+      <a class="nav-item" href="/panel"><span class="ic">▤</span><span class="label">Facturas pendientes</span><span class="count" id="navCount">…</span></a>
+      <a class="nav-item" href="/aprobadas"><span class="ic">✓</span><span class="label">Aprobadas</span></a>
+      <div class="sidebar-foot">Gauss Sistemas<br>Cuenta: Producción</div>
+    </div>
+
+    <div class="main">
       <p class="eyebrow">Automatización de facturas — reemplazo de Boolfy</p>
       <h1>Estado del proyecto</h1>
-      <p class="dek">Cada fase de esta lista es una etapa del flujo completo: leer la factura, decidir a qué ítem de compra corresponde cada línea, y darla de alta en Eiffel.</p>
-    </div>
+      <p class="dek">Cada fase es una etapa del flujo completo: leer la factura, decidir a qué ítem de compra corresponde cada línea, y darla de alta en Eiffel.</p>
 
-    <div class="stats" id="stats"></div>
+      <div class="stats" id="stats"></div>
 
-    <div class="phase done">
-      <div class="phase-num">✓</div>
-      <div class="phase-body">
-        <div class="phase-title"><h2>Fase 1 — Ingesta y extracción</h2><span class="badge done">Completa</span></div>
-        <p class="phase-desc">Lee el PDF (de una carpeta o de un mail) y saca CUIT, número, fecha, CAE, total y las líneas de detalle. Corre automáticamente, sin pantalla propia — es la base de la Fase 2.</p>
+      <div class="phase done">
+        <div class="phase-num">✓</div>
+        <div class="phase-body">
+          <div class="phase-title"><h2>Fase 1 — Ingesta y extracción</h2><span class="badge done">Completa</span></div>
+          <p class="phase-desc">Lee el PDF (de una carpeta o de un mail) y saca CUIT, número, fecha, CAE, total y las líneas de detalle. Corre automáticamente, sin pantalla propia.</p>
+        </div>
       </div>
-    </div>
 
-    <div class="phase done">
-      <div class="phase-num">✓</div>
-      <div class="phase-body">
-        <div class="phase-title"><h2>Fase 2 — Matching + revisión humana</h2><span class="badge done">Completa</span></div>
-        <p class="phase-desc">Decide a qué ítem de compra de Eiffel corresponde cada línea; cuando no está seguro, te lo pregunta en una pantalla guiada paso a paso, y se acuerda de tu elección.</p>
-        <div class="phase-cta"><a href="/panel">Ir al panel de revisión →</a></div>
+      <div class="phase done">
+        <div class="phase-num">✓</div>
+        <div class="phase-body">
+          <div class="phase-title"><h2>Fase 2 — Matching + revisión humana</h2><span class="badge done">Completa</span></div>
+          <p class="phase-desc">Decide a qué ítem de compra de Eiffel corresponde cada línea; cuando no está seguro, te lo muestra para que elijas, y se acuerda de tu elección.</p>
+          <div class="phase-cta"><a href="/panel">Ir a facturas pendientes →</a></div>
+        </div>
       </div>
-    </div>
 
-    <div class="phase next">
-      <div class="phase-num">3</div>
-      <div class="phase-body">
-        <div class="phase-title"><h2>Fase 3 — Alta real en Eiffel</h2><span class="badge next">Diseño listo</span></div>
-        <p class="phase-desc">Mandar la factura aprobada a la API real. El diseño está cerrado (se confirmó leyendo el código fuente de la API) — sólo falta un usuario propio para autenticarnos.</p>
+      <div class="phase next">
+        <div class="phase-num">3</div>
+        <div class="phase-body">
+          <div class="phase-title"><h2>Fase 3 — Alta real en Eiffel</h2><span class="badge next">Diseño listo</span></div>
+          <p class="phase-desc">Mandar la factura aprobada a la API real. El diseño está cerrado — sólo falta un usuario propio para autenticarnos.</p>
+        </div>
       </div>
-    </div>
 
-    <div class="phase todo">
-      <div class="phase-num">4</div>
-      <div class="phase-body">
-        <div class="phase-title"><h2>Fase 4 — Auditoría y mejora continua</h2><span class="badge todo">No empezada</span></div>
-        <p class="phase-desc">Dashboard de KPIs y matching aproximado sobre el histórico de asignaciones manuales.</p>
+      <div class="phase todo">
+        <div class="phase-num">4</div>
+        <div class="phase-body">
+          <div class="phase-title"><h2>Fase 4 — Auditoría y mejora continua</h2><span class="badge todo">No empezada</span></div>
+          <p class="phase-desc">Dashboard de KPIs y matching aproximado sobre el histórico de asignaciones manuales.</p>
+        </div>
       </div>
-    </div>
 
-    <footer>Alcance actual: facturas de servicios. Otros canales y facturas de bienes quedan para más adelante.</footer>
+      <p class="scope-note">Alcance actual: facturas de servicios. Otros canales y facturas de bienes quedan para más adelante.</p>
+    </div>
   </div>
 
 <script>
@@ -117,6 +156,7 @@ async function loadStats() {
   try {
     const res = await fetch('/api/stats');
     const data = await res.json();
+    document.getElementById('navCount').textContent = data.pending;
     document.getElementById('stats').innerHTML = `
       <div class="stat"><div class="num">${data.pending}</div><div class="label">Facturas pendientes</div></div>
       <div class="stat"><div class="num">${data.approved}</div><div class="label">Aprobadas</div></div>

@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Aprobadas — SmartScan</title>
+<style>
+  :root {
+    --paper: #FFFFFF;
+    --paper-2: #F7F5F1;
+    --ink: #2A2722;
+    --ink-soft: #6F6A5E;
+    --line: #E3DFD6;
+    --sidebar-bg: #38352E;
+    --sidebar-ink: #EDEAE2;
+    --sidebar-ink-soft: #A6A093;
+    --sidebar-active: #46423A;
+    --accent: #C1432E;
+    --accent-soft: #F6E4DF;
+    --good: #5C7A52;
+    --good-soft: #EBF0E6;
+    --radius: 12px;
+    --radius-sm: 8px;
+    --shadow: 0 1px 2px rgba(42,39,34,.08), 0 2px 8px rgba(42,39,34,.06);
+    --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --font-mono: ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #211F1B; --paper-2: #2A2822; --ink: #EEEAE2; --ink-soft: #A6A093;
+      --line: #423E36; --sidebar-bg: #17150F; --sidebar-active: #29261F;
+      --accent: #E0725D; --accent-soft: #3D2621; --good: #8FAE84; --good-soft: #26301F;
+      --shadow: 0 1px 2px rgba(0,0,0,.4), 0 2px 8px rgba(0,0,0,.3);
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #211F1B; --paper-2: #2A2822; --ink: #EEEAE2; --ink-soft: #A6A093;
+    --line: #423E36; --sidebar-bg: #17150F; --sidebar-active: #29261F;
+    --accent: #E0725D; --accent-soft: #3D2621; --good: #8FAE84; --good-soft: #26301F;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 2px 8px rgba(0,0,0,.3);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--paper-2); color: var(--ink); font-family: var(--font); }
+
+  .shell { display: grid; grid-template-columns: 216px 1fr; min-height: 100vh; }
+  .shell.collapsed { grid-template-columns: 64px 1fr; }
+  .sidebar { background: var(--sidebar-bg); color: var(--sidebar-ink); padding: 16px 12px; display: flex; flex-direction: column; overflow: hidden; }
+  .brand-row { display: flex; align-items: center; gap: 10px; padding: 4px 6px 20px; }
+  .brand-row .mark { width: 30px; height: 30px; border-radius: 8px; background: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 15px; color: white; flex-shrink: 0; }
+  .brand-row .name { font-size: 14.5px; font-weight: 700; letter-spacing: -0.01em; white-space: nowrap; }
+  .hamburger { background: none; border: none; color: var(--sidebar-ink-soft); cursor: pointer; padding: 6px; margin-left: auto; flex-shrink: 0; font-size: 15px; }
+  .hamburger:hover { color: var(--sidebar-ink); }
+  .shell.collapsed .brand-row .name, .shell.collapsed .nav-item .label, .shell.collapsed .nav-item .count { display: none; }
+  .shell.collapsed .brand-row { justify-content: center; padding: 4px 0 20px; }
+  .shell.collapsed .hamburger { margin: 0; }
+  a.nav-item, .nav-item { display: flex; align-items: center; gap: 11px; padding: 9px 10px; border-radius: var(--radius-sm); font-size: 13.5px; color: var(--sidebar-ink-soft); cursor: pointer; margin-bottom: 2px; text-decoration: none; white-space: nowrap; }
+  .nav-item .ic { width: 18px; text-align: center; flex-shrink: 0; }
+  .nav-item.active { background: var(--sidebar-active); color: var(--sidebar-ink); font-weight: 600; }
+  .nav-item .count { margin-left: auto; background: var(--accent); color: white; font-size: 10.5px; font-weight: 700; padding: 1px 7px; border-radius: 9px; }
+  .nav-item:hover:not(.active) { color: var(--sidebar-ink); }
+  .sidebar-foot { margin-top: auto; padding: 10px 10px 0; font-size: 11.5px; color: var(--sidebar-ink-soft); border-top: 1px solid rgba(255,255,255,.08); padding-top: 14px; white-space: nowrap; overflow: hidden; }
+
+  .main { padding: 24px 32px; }
+  .topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .topbar h1 { font-size: 17px; margin: 0; }
+
+  table.approved-table { width: 100%; border-collapse: collapse; background: var(--paper); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+  table.approved-table th { text-align: left; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-soft); padding: 12px 16px; border-bottom: 1px solid var(--line); background: var(--paper-2); }
+  table.approved-table td { padding: 13px 16px; border-bottom: 1px solid var(--line); font-size: 13.5px; }
+  table.approved-table tr:last-child td { border-bottom: none; }
+  .num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+  .provider { font-weight: 600; }
+  .cuit { color: var(--ink-soft); font-size: 12px; font-family: var(--font-mono); }
+  .empty { color: var(--ink-soft); font-size: 14px; padding: 40px; text-align: center; }
+  .pill-ok { display: inline-flex; align-items: center; gap: 5px; font-size: 10.5px; font-weight: 700; padding: 2px 9px; border-radius: 10px; background: var(--good-soft); color: var(--good); }
+</style>
+</head>
+<body>
+  <div class="shell" id="shell">
+    <div class="sidebar">
+      <div class="brand-row">
+        <div class="mark">S</div>
+        <div class="name">SmartScan</div>
+        <button class="hamburger" onclick="document.getElementById('shell').classList.toggle('collapsed')" title="Contraer menú">☰</button>
+      </div>
+      <a class="nav-item" href="/"><span class="ic">⌂</span><span class="label">Inicio</span></a>
+      <a class="nav-item" href="/panel"><span class="ic">▤</span><span class="label">Facturas pendientes</span><span class="count" id="navCount">…</span></a>
+      <a class="nav-item active" href="/aprobadas"><span class="ic">✓</span><span class="label">Aprobadas</span></a>
+      <div class="sidebar-foot">Gauss Sistemas<br>Cuenta: Producción</div>
+    </div>
+
+    <div class="main">
+      <div class="topbar"><h1>Facturas aprobadas</h1></div>
+      <div id="content"><div class="empty">Cargando…</div></div>
+    </div>
+  </div>
+
+<script>
+async function load() {
+  const [approvedRes, statsRes] = await Promise.all([fetch('/api/approved'), fetch('/api/stats')]);
+  const approved = await approvedRes.json();
+  const stats = await statsRes.json();
+  document.getElementById('navCount').textContent = stats.pending;
+
+  const el = document.getElementById('content');
+  if (approved.length === 0) {
+    el.innerHTML = '<div class="empty">Todavía no aprobaste ninguna factura.</div>';
+    return;
+  }
+  el.innerHTML = `<table class="approved-table">
+    <tr><th>Proveedor</th><th>Comprobante</th><th>Total</th><th>Estado</th></tr>
+    ${approved.map(a => `<tr>
+      <td><div class="provider">${a.name || a.filename}</div><div class="cuit">${a.cuit || ''}</div></td>
+      <td class="num">${a.number || '—'}</td>
+      <td class="num">${a.total !== null && a.total !== undefined ? '$' + a.total.toFixed(2) : '—'}</td>
+      <td><span class="pill-ok">✓ Lista para Fase 3</span></td>
+    </tr>`).join('')}
+  </table>`;
+}
+load();
+</script>
+</body>
+</html>
