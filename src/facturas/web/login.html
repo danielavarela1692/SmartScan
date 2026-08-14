@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Iniciá sesión — SmartScan</title>
+<style>
+  :root {
+    --paper: #FFFFFF;
+    --paper-2: #F7F5F1;
+    --ink: #2A2722;
+    --ink-soft: #6F6A5E;
+    --line: #E3DFD6;
+    --dark: #211E19;
+    --dark-2: #2C2820;
+    --accent: #C1432E;
+    --accent-soft: #F6E4DF;
+    --glow-1: #C1432E;
+    --glow-2: #D98A3A;
+    --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #211F1B; --paper-2: #2A2822; --ink: #EEEAE2; --ink-soft: #A6A093; --line: #423E36;
+      --accent: #E0725D; --accent-soft: #3D2621;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #211F1B; --paper-2: #2A2822; --ink: #EEEAE2; --ink-soft: #A6A093; --line: #423E36;
+    --accent: #E0725D; --accent-soft: #3D2621;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; font-family: var(--font); background: var(--paper); }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+
+  .split { display: grid; grid-template-columns: 1.15fr 1fr; min-height: 100vh; }
+  @media (max-width: 860px) { .split { grid-template-columns: 1fr; } .hero { display: none; } }
+
+  /* ---- lado izquierdo: hero animado ---- */
+  .hero { position: relative; background: radial-gradient(120% 140% at 20% 15%, var(--dark-2), var(--dark) 60%); overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; padding: 48px; color: #F3EEE6; }
+  .hero .orb { position: absolute; border-radius: 50%; filter: blur(2px); opacity: 0.55; }
+  .orb-a { width: 460px; height: 460px; right: -140px; top: -120px; background: radial-gradient(circle at 35% 35%, var(--glow-1), transparent 70%); animation: float-a 14s ease-in-out infinite; }
+  .orb-b { width: 340px; height: 340px; left: -100px; bottom: -80px; background: radial-gradient(circle at 40% 40%, var(--glow-2), transparent 70%); opacity: 0.35; animation: float-b 18s ease-in-out infinite; }
+  @keyframes float-a { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(-24px, 26px) scale(1.06); } }
+  @keyframes float-b { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(20px, -18px) scale(1.08); } }
+
+  .rings { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+  .rings svg { width: 620px; height: 620px; max-width: 90%; opacity: 0.9; }
+  .rings circle { fill: none; stroke: rgba(243,238,230,0.14); }
+  .rings .accent-ring { stroke: var(--accent); stroke-dasharray: 4 10; animation: spin 40s linear infinite; transform-origin: center; }
+  .rings .accent-ring2 { stroke: #D98A3A; stroke-opacity: 0.55; stroke-dasharray: 2 8; animation: spin-rev 55s linear infinite; transform-origin: center; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes spin-rev { to { transform: rotate(-360deg); } }
+
+  .flow { position: relative; z-index: 2; display: flex; align-items: center; gap: 14px; margin: auto 0; }
+  .flow .node { width: 46px; height: 46px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 19px; background: rgba(243,238,230,0.08); border: 1px solid rgba(243,238,230,0.18); backdrop-filter: blur(2px); }
+  .flow .node.active { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 24px rgba(193,67,46,.55); }
+  .flow .arrow { color: rgba(243,238,230,0.35); font-size: 16px; }
+
+  .hero-eyebrow { position: relative; z-index: 2; font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--glow-2); }
+  .hero-head { position: relative; z-index: 2; font-size: 32px; font-weight: 700; letter-spacing: -0.01em; line-height: 1.25; max-width: 15ch; text-wrap: balance; margin: 14px 0 0; }
+  .hero-foot { position: relative; z-index: 2; font-size: 13px; color: rgba(243,238,230,0.55); }
+
+  /* ---- lado derecho: formulario ---- */
+  .panel { display: flex; align-items: center; justify-content: center; padding: 40px 32px; background: var(--paper); }
+  .card { width: 100%; max-width: 360px; }
+  .logo-row { display: flex; align-items: center; gap: 10px; margin-bottom: 34px; }
+  .logo-mark { width: 34px; height: 34px; border-radius: 9px; background: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 16px; color: white; }
+  .logo-word { font-size: 17px; font-weight: 700; letter-spacing: -0.01em; color: var(--ink); }
+  .logo-note { font-size: 10.5px; color: var(--ink-soft); margin-left: 2px; }
+
+  h1 { font-size: 21px; margin: 0 0 6px; color: var(--ink); letter-spacing: -0.01em; }
+  .sub { font-size: 13.5px; color: var(--ink-soft); margin: 0 0 26px; }
+
+  .btn-google { width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 11px 16px; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); color: var(--ink); font-size: 14px; font-weight: 600; font-family: var(--font); cursor: pointer; }
+  .btn-google:hover { background: var(--paper-2); }
+
+  .divider { display: flex; align-items: center; gap: 12px; margin: 22px 0; color: var(--ink-soft); font-size: 12px; }
+  .divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-size: 12px; color: var(--ink-soft); margin-bottom: 5px; }
+  .field input { width: 100%; padding: 11px 12px; border: 1px solid var(--line); border-radius: 8px; font-size: 14px; font-family: var(--font); background: var(--paper); color: var(--ink); }
+  .field input:focus { outline: none; border-color: var(--accent); }
+
+  .btn-primary { width: 100%; padding: 12px; border: none; border-radius: 10px; background: var(--accent); color: white; font-size: 14.5px; font-weight: 700; font-family: var(--font); cursor: pointer; margin-top: 6px; }
+  .btn-primary:hover { opacity: 0.94; }
+
+  .forgot { display: block; text-align: center; margin-top: 18px; font-size: 12.5px; color: var(--ink-soft); text-decoration: none; }
+  .forgot:hover { color: var(--accent); }
+
+  .demo-note { margin-top: 28px; font-size: 11px; color: var(--ink-soft); text-align: center; }
+</style>
+</head>
+<body>
+  <div class="split">
+    <div class="hero">
+      <div class="orb orb-a"></div>
+      <div class="orb orb-b"></div>
+      <div class="rings">
+        <svg viewBox="0 0 200 200" role="img" aria-label="Anillos concéntricos animados, representando el flujo automático de datos">
+          <circle cx="100" cy="100" r="60"></circle>
+          <circle cx="100" cy="100" r="82" class="accent-ring"></circle>
+          <circle cx="100" cy="100" r="96" class="accent-ring2"></circle>
+        </svg>
+      </div>
+
+      <div>
+        <p class="hero-eyebrow">Evolución · Automatización</p>
+        <h2 class="hero-head">Cada factura que antes cargabas a mano, ahora se resuelve sola.</h2>
+      </div>
+
+      <div class="flow" aria-hidden="true">
+        <div class="node">📄</div>
+        <div class="arrow">→</div>
+        <div class="node">🔎</div>
+        <div class="arrow">→</div>
+        <div class="node active">⚙</div>
+        <div class="arrow">→</div>
+        <div class="node">✓</div>
+      </div>
+
+      <p class="hero-foot">SmartScan — automatización de facturas para Eiffel</p>
+    </div>
+
+    <div class="panel">
+      <div class="card">
+        <div class="logo-row">
+          <div class="logo-mark">S</div>
+          <div class="logo-word">SmartScan</div>
+          <span class="logo-note">(logo pendiente)</span>
+        </div>
+
+        <h1>Iniciá sesión</h1>
+        <p class="sub">Entrá con tu cuenta de Gauss Sistemas para revisar y aprobar facturas.</p>
+
+        <button class="btn-google" onclick="mockLogin('Google')">
+          <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.9c1.7-1.56 2.7-3.86 2.7-6.62z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.9-2.26c-.8.54-1.84.86-3.06.86-2.35 0-4.34-1.59-5.05-3.72H.98v2.33A9 9 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.95 10.7A5.4 5.4 0 0 1 3.66 9c0-.59.1-1.17.29-1.7V4.97H.98A9 9 0 0 0 0 9c0 1.45.35 2.83.98 4.03l2.97-2.33z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.51.46 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .98 4.97l2.97 2.33C4.66 5.17 6.65 3.58 9 3.58z"/></svg>
+          Continuar con Google
+        </button>
+
+        <div class="divider">o con tu email</div>
+
+        <form onsubmit="event.preventDefault(); mockLogin('email');">
+          <div class="field">
+            <label for="email">Email</label>
+            <input id="email" type="email" placeholder="vos@gausssistemas.com.ar" required>
+          </div>
+          <div class="field">
+            <label for="password">Contraseña</label>
+            <input id="password" type="password" placeholder="••••••••" required>
+          </div>
+          <button type="submit" class="btn-primary">Ingresar</button>
+        </form>
+
+        <a class="forgot" href="#" onclick="event.preventDefault(); alert('Recuperación de email/contraseña: todavía no conectado.');">¿Olvidaste tu email o contraseña?</a>
+
+        <p class="demo-note">Pantalla de diseño — el inicio de sesión real todavía no está conectado.</p>
+      </div>
+    </div>
+  </div>
+
+<script>
+function mockLogin(via) {
+  window.location.href = '/';
+}
+</script>
+</body>
+</html>

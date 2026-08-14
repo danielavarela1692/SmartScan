@@ -16,6 +16,7 @@ from ..pipeline import ExtractionResult, extract_raw, resolve_concepts, to_servi
 TEMPLATE_PATH = Path(__file__).parent / "review.html"
 STATUS_TEMPLATE_PATH = Path(__file__).parent / "status.html"
 APPROVED_TEMPLATE_PATH = Path(__file__).parent / "approved.html"
+LOGIN_TEMPLATE_PATH = Path(__file__).parent / "login.html"
 
 
 def _ranked_candidates(detail: str, candidates: list[ProviderItem]) -> list[dict]:
@@ -95,6 +96,10 @@ def create_app(inbox_dir: Path, outbox_dir: Path) -> FastAPI:
         result = ExtractionResult(document=document, raw=raw, service_expense=service_expense)
         outcomes = resolve_concepts(result, catalog, store)
         return result, outcomes, False
+
+    @app.get("/login", response_class=HTMLResponse)
+    def login_page():
+        return LOGIN_TEMPLATE_PATH.read_text(encoding="utf-8")
 
     @app.get("/", response_class=HTMLResponse)
     def status_page():
